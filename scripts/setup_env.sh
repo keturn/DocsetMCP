@@ -9,29 +9,13 @@ if [ -d ".venv" ]; then
     rm -rf .venv
 fi
 
-# Create new virtual environment
-echo "Creating new virtual environment..."
-python3 -m venv .venv
-
-# Activate virtual environment
-echo "Activating virtual environment..."
-source .venv/bin/activate
-
-# Upgrade pip
-echo "Upgrading pip..."
-pip install --upgrade pip
-
-# Install production dependencies
-echo "Installing production dependencies..."
-pip install -r requirements.txt
-
-# Install development dependencies
-echo "Installing development dependencies..."
-pip install -r requirements-dev.txt
+# Create new virtual environment and install dependencies with uv
+echo "Creating virtual environment and installing dependencies with uv..."
+uv sync --all-extras
 
 # Install pre-commit hooks
 echo "Installing pre-commit hooks..."
-pre-commit install
+uv run pre-commit install
 
 # Install cspell globally for spell checking
 echo "Installing cspell for spell checking..."
@@ -43,5 +27,4 @@ else
     echo "You can install cspell later with: npm install -g cspell@latest"
 fi
 
-echo "Setup complete! Virtual environment created at .venv"
-echo "To activate it, run: source .venv/bin/activate"
+echo "Setup complete!"
