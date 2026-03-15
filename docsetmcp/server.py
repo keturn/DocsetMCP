@@ -144,8 +144,6 @@ class DashExtractor:
 
     def search(self, query: str, language: str = "swift", max_results: int = 3) -> str:
         """Search for Apple API documentation"""
-        results: list[str] = []
-
         # Search the optimized index
         conn = sqlite3.connect(self.optimized_db)
         cursor = conn.cursor()
@@ -319,16 +317,7 @@ class DashExtractor:
         # Extract documentation for each result
         results: list[str] = []
         for row in db_results[:max_results]:
-            # Handle both 3-column and 4-column results (with or without rank)
-            if len(row) == 4:
-                name: str = str(row[0])
-                doc_type: str = str(row[1])
-                path: str = str(row[2])
-                # Ignore rank column (row[3])
-            else:
-                name: str = str(row[0])
-                doc_type: str = str(row[1])
-                path: str = str(row[2])
+            name, doc_type, path, *_ = row
             if self.config["format"] == "apple":
                 if "request_key=" in path:
                     request_key: str = path.split("request_key=")[1].split("#")[0]
@@ -445,15 +434,7 @@ class DashExtractor:
 
         # Found entries but couldn't extract
         entries_info: list[str] = []
-        for row in db_results[:10]:  # Show up to 10 entries found
-            if len(row) == 4:
-                name: str = str(row[0])
-                doc_type: str = str(row[1])
-                # path not needed for this output
-            else:
-                name: str = str(row[0])
-                doc_type: str = str(row[1])
-                # path not needed for this output
+        for name, doc_type, *_ in db_results[:10]:  # Show up to 10 entries found
             entries_info.append(f"- {name} ({doc_type})")
 
         return f"""Found entries for '{query}' but couldn't extract documentation. The content may not be in the offline cache.
@@ -920,14 +901,12 @@ class CheatsheetExtractor:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT DISTINCT name
             FROM searchIndex
             WHERE type = 'Category'
             ORDER BY name
-        """
-        )
+        """)
 
         categories = [row[0] for row in cursor.fetchall()]
         conn.close()
@@ -1501,9 +1480,13 @@ def initialize_extractors():
         # Pass additional docset paths for auto-detection
         additional_paths = []
         if docsetmcp_config.additional_docset_paths:
-            additional_paths = docsetmcp_config.parse_path_list(docsetmcp_config.additional_docset_paths)
-        
-        all_configs = loader.load_all_configs(additional_paths if additional_paths else None)
+            additional_paths = docsetmcp_config.parse_path_list(
+                docsetmcp_config.additional_docset_paths
+            )
+
+        all_configs = loader.load_all_configs(
+            additional_paths if additional_paths else None
+        )
 
         # Try to initialize each docset
         for docset_type, config in all_configs.items():
@@ -1511,13 +1494,15 @@ def initialize_extractors():
                 # Create a modified DashExtractor that uses the provided config
                 extractor = DashExtractor.__new__(DashExtractor)
                 extractor.config = config
-                
+
                 # Build list of paths to search for docsets
                 search_paths: list[str] = []
-                
+
                 # Use custom docset location if provided, otherwise use configured paths
                 if docsetmcp_config.docset_path:
-                    search_paths.append(os.path.expanduser(docsetmcp_config.docset_path))
+                    search_paths.append(
+                        os.path.expanduser(docsetmcp_config.docset_path)
+                    )
                 else:
                     # Check environment variable for custom location
                     env_path = os.getenv("DOCSET_PATH")
@@ -1534,7 +1519,9 @@ def initialize_extractors():
                     # If no custom paths specified, use default Dash location
                     if not search_paths:
                         search_paths.append(
-                            os.path.expanduser("~/Library/Application Support/Dash/DocSets")
+                            os.path.expanduser(
+                                "~/Library/Application Support/Dash/DocSets"
+                            )
                         )
 
                 # Find the docset in the search paths
@@ -1548,18 +1535,30 @@ def initialize_extractors():
                 # If not found, skip this docset
                 if extractor.docset is None:
                     continue
-                    
+
                 # Set up paths based on docset format
                 if config["format"] == "apple":
-                    extractor.fs_dir = extractor.docset / "Contents/Resources/Documents/fs"
-                    extractor.optimized_db = extractor.docset / "Contents/Resources/optimizedIndex.dsidx"
-                    extractor.cache_db = extractor.docset / "Contents/Resources/Documents/cache.db"
+                    extractor.fs_dir = (
+                        extractor.docset / "Contents/Resources/Documents/fs"
+                    )
+                    extractor.optimized_db = (
+                        extractor.docset / "Contents/Resources/optimizedIndex.dsidx"
+                    )
+                    extractor.cache_db = (
+                        extractor.docset / "Contents/Resources/Documents/cache.db"
+                    )
                     # Cache for decompressed fs files
                     extractor.fs_cache = {}
                 elif config["format"] == "tarix":
-                    extractor.optimized_db = extractor.docset / "Contents/Resources/optimizedIndex.dsidx"
-                    extractor.tarix_archive = extractor.docset / "Contents/Resources/tarix.tgz"
-                    extractor.tarix_index = extractor.docset / "Contents/Resources/tarixIndex.db"
+                    extractor.optimized_db = (
+                        extractor.docset / "Contents/Resources/optimizedIndex.dsidx"
+                    )
+                    extractor.tarix_archive = (
+                        extractor.docset / "Contents/Resources/tarix.tgz"
+                    )
+                    extractor.tarix_index = (
+                        extractor.docset / "Contents/Resources/tarixIndex.db"
+                    )
                     # Cache for extracted HTML content
                     extractor.html_cache = {}
 
@@ -1568,7 +1567,7 @@ def initialize_extractors():
                     continue
 
                 extractors[docset_type] = extractor
-                
+
             except Exception as e:
                 # Debug: print what went wrong
                 print(f"Warning: Failed to initialize {docset_type}: {e}")
@@ -2022,14 +2021,12 @@ def list_types(docset: str, language: str | None = None) -> str:
             (f"%{lang_filter}%",),
         )
     else:
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT type, COUNT(*) as count
             FROM searchIndex
             GROUP BY type
             ORDER BY count DESC
-        """
-        )
+        """)
 
     type_counts = cursor.fetchall()
 
