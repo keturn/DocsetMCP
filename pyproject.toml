@@ -54,7 +54,7 @@ Homepage = "https://github.com/codybrom/docsetmcp"
 Source = "https://github.com/codybrom/docsetmcp"
 
 [project.scripts]
-docsetmcp = "docsetmcp.server:main"
+docsetmcp = "docsetmcp.main:main"
 
 [tool.uv.build-backend]
 module-name = "docsetmcp"

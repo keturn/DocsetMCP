@@ -10,17 +10,17 @@ Usage: python scripts/validate_cheatsheets.py
 import sys
 import os
 
+from docsetmcp.cheatsheet_tools import list_available_cheatsheets, search_cheatsheet
+
 # Suppress loading messages during import
 _original_stdout = sys.stdout
 _original_stderr = sys.stderr
 sys.stdout = open(os.devnull, "w")
 sys.stderr = open(os.devnull, "w")
 
-from docsetmcp.server import (
-    list_available_cheatsheets,
+from docsetmcp.cheatsheet_extractor import CheatsheetExtractor
+from docsetmcp.cheatsheet_tools import (
     list_cheatsheet_categories,
-    search_cheatsheet,
-    CheatsheetExtractor,
 )
 
 # Restore stdout/stderr

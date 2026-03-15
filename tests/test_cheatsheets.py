@@ -9,12 +9,13 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
+from docsetmcp.cheatsheet_tools import search_cheatsheet
+
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from docsetmcp.server import (
-    CheatsheetExtractor,
-    search_cheatsheet,
+from docsetmcp.cheatsheet_extractor import CheatsheetExtractor
+from docsetmcp.cheatsheet_tools import (
     list_available_cheatsheets,
 )
 import docsetmcp.server

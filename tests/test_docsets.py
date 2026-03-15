@@ -13,7 +13,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from docsetmcp.server import DashExtractor
+from docsetmcp.dash_extractor import DashExtractor
 
 
 class TestDocsets:
@@ -169,13 +169,11 @@ class TestDocsets:
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT DISTINCT type
                 FROM searchIndex
                 WHERE type != ''
-            """
-            )
+            """)
 
             existing_types = {row[0] for row in cursor.fetchall()}
             conn.close()
@@ -428,8 +426,7 @@ class TestEdgeCases:
             cursor = conn.cursor()
 
             # First, let's see what's actually in the database for CarPlay
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT name, type, path
                 FROM searchIndex
                 WHERE name LIKE '%CarPlay%'
@@ -441,8 +438,7 @@ class TestEdgeCases:
                     END,
                     LENGTH(name)
                 LIMIT 50
-            """
-            )
+            """)
 
             db_results = cursor.fetchall()
             conn.close()
