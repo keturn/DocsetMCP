@@ -1,0 +1,34 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "MCP Inspector",
+            "type": "process",
+            "command": "bunx",  // cspell:disable-line
+            "args": [
+                "@modelcontextprotocol/inspector"
+            ],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "never",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "pre-commit",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pre-commit",
+                "run"
+            ],
+            "problemMatcher": [
+                "$python"
+            ]
+        }
+    ]
+}
