@@ -77,4 +77,4 @@ pythonVersion = "3.10"
 reportMissingImports = true
 reportUnnecessaryCast = true
 reportUntypedFunctionDecorator = "none"
-exclude = ["**/node_modules", "**/__pycache__", "**/.*", "build", "dist"]
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", "build", "dist", ".venv"]
