@@ -7,10 +7,8 @@ import os
 from pathlib import Path
 from typing import TypedDict, Optional
 
-# MCP SDK imports
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
-# Import shared types
 from docsetmcp.common import (
     ProcessedDocsetConfig,
 )
