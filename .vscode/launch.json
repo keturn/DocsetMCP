@@ -10,7 +10,17 @@
             "request": "launch",
             "program": ".venv/bin/mcp",
             "args": ["run", "-t", "streamable-http", "docsetmcp/main.py"],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                "DOCSET_PATH": "${input:DOCSET_PATH}",
+            },
+        }
+    ],
+    "inputs": [
+        {
+            "id": "DOCSET_PATH",
+            "type": "promptString",
+            "description": "docset directory",
         }
     ]
 }

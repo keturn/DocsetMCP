@@ -15,7 +15,8 @@
                 "reveal": "never",
                 "panel": "dedicated",
                 "clear": true
-            }
+            },
+            "problemMatcher": []
         },
         {
             "label": "pre-commit",
