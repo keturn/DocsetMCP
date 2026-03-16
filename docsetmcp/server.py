@@ -11,7 +11,7 @@ from typing import TypedDict, Optional
 from mcp.server.fastmcp import FastMCP
 
 # Import shared types
-from docsetmcp.types import (
+from docsetmcp.common import (
     ProcessedDocsetConfig,
 )
 

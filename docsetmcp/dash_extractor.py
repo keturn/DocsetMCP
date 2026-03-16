@@ -1,4 +1,4 @@
-from docsetmcp.types import AppleDocumentation, ContentItem, ProcessedDocsetConfig
+from docsetmcp.common import AppleDocumentation, ContentItem, ProcessedDocsetConfig
 
 
 import brotli

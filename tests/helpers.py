@@ -7,9 +7,8 @@ import os
 import sqlite3
 from pathlib import Path
 
-
 # Import the actual config type from shared types
-from docsetmcp.types import ProcessedDocsetConfig
+from docsetmcp.common import ProcessedDocsetConfig
 
 
 class TestDashExtractor:

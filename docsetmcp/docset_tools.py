@@ -2,7 +2,7 @@ import sqlite3
 from typing import Union
 
 from docsetmcp.server import MatchedDocsetInfo, extractors, mcp
-from docsetmcp.types import DocsetInfo
+from docsetmcp.common import DocsetInfo
 
 
 @mcp.tool()

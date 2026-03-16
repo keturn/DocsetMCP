@@ -8,7 +8,7 @@ import sqlite3
 import os
 from pathlib import Path
 
-from docsetmcp.types import (
+from docsetmcp.common import (
     LanguageConfig,
     DocsetConfig,
     ProcessedDocsetConfig,
