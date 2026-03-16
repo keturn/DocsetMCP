@@ -232,7 +232,7 @@ class DashExtractor:
                         ELSE 4
                     END as rank
                 FROM searchIndex
-                WHERE name LIKE ? COLLATE NOCASE
+                WHERE name LIKE ? ESCAPE char(0x1B) COLLATE NOCASE
                 AND (
                     (path LIKE ? AND path LIKE ?)  -- Has language filter
                     OR (type IN ({type_list}) AND (path LIKE '%/documentation/%' OR path LIKE '%request_key=%'))  -- Or is framework without language
@@ -245,7 +245,7 @@ class DashExtractor:
                     query,
                     f"{query}%",
                     f"{query}%",
-                    f"%{query}%",
+                    f"%{escape_like_pattern(query)}%",
                     f"%{lang_filter}%",
                     f"%{lang_filter}%",
                     max_results * 2,
