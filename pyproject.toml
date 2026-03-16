@@ -34,6 +34,8 @@ dependencies = [
     "Brotli>=1.1.0",
     "PyYAML>=6.0",
     "fastmcp>=3.1.1",
+    "beautifulsoup4>=4.14.3",
+    "html-to-markdown>=2.28.2",
 ]
 
 [dependency-groups]

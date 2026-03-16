@@ -1,4 +1,9 @@
 from itertools import chain
+from textwrap import dedent
+from urllib.parse import urlsplit
+
+import bs4
+import html_to_markdown
 
 from docsetmcp.common import AppleDocumentation, ContentItem, ProcessedDocsetConfig
 
@@ -13,7 +18,7 @@ import sqlite3
 import tarfile
 from pathlib import Path
 
-from docsetmcp.db_util import connect_readonly
+from docsetmcp.db_util import connect_readonly, escape_like_pattern
 from docsetmcp.server import DocsetMCPConfig
 
 
@@ -45,16 +50,20 @@ class DashExtractor:
         else:
             self.search_index_db = resources / "docSet.dsidx"
 
+        self.documents_path = resources / "Documents"
+
         if self.config["format"] == "apple":
             self.fs_dir = resources / "Documents" / "fs"
             self.cache_db = resources / "cache.db"
             # Cache for decompressed fs files
             self.fs_cache: dict[int, bytes] = {}
-        elif self.config["format"] == "tarix":
+        elif (resources / "tarix.tgz").exists():
             self.tarix_archive = resources / "tarix.tgz"
             self.tarix_index = resources / "tarixIndex.db"
             # Cache for extracted HTML content
             self.html_cache: dict[str, str] = {}
+        else:
+            self.tarix_archive = None
 
         # Check if docset exists
         if not self.docset.exists():
@@ -301,9 +310,12 @@ class DashExtractor:
                             markdown += type_note
 
                         results.append(markdown)
-            elif self.config["format"] == "tarix":
-                # Extract HTML content from tarix archive
-                html_content = self._extract_from_tarix(path)
+            else:
+                if self.tarix_archive:
+                    html_content = self._extract_from_tarix(path)
+                else:
+                    html_content = self._extract_by_path(path)
+
                 if html_content:
                     markdown = self._format_html_as_markdown(
                         html_content, name, doc_type, path
@@ -648,6 +660,28 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
                 parts.append(f"`{title}`")
         return " ".join(parts)
 
+    def _extract_by_path(self, html_path: str) -> str:
+        """Extract HTML content from flat files."""
+        url = urlsplit(html_path)
+        assert url.netloc == ""
+        full_path = self.documents_path / Path(url.path)
+        if not full_path.resolve(strict=True).is_relative_to(self.documents_path):
+            raise ValueError(
+                f"Invalid path: {url.path!r} must be within docset Documents directory"
+            )
+        with full_path.open() as html_file:
+            soup: bs4.Tag = bs4.BeautifulSoup(html_file)
+
+        if url.fragment:
+            if target := (
+                soup.find(id=url.fragment)
+                or soup.find("a", attrs={"name": url.fragment})
+            ):
+                # The target is typically an anchor or a heading. Move up to its container element for relevant context.
+                soup = target.parent or target
+
+        return soup.decode()
+
     def _extract_from_tarix(self, search_path: str) -> str | None:
         """Extract HTML content from tarix archive"""
         # Remove anchor from path
@@ -722,33 +756,30 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
         self, html_content: str, name: str, doc_type: str, path: str
     ) -> str:
         """Convert HTML documentation to Markdown"""
-        lines: list[str] = []
+        # fmt: off
+        lines: list[str] = [dedent(f"""\
+            ---
+            Title: {name}
+            Type: {doc_type}
+            Document-Source: {path}
+            ---
+            """)]
+        # fmt: on
 
-        # Title
-        lines.append(f"# {name}")
-
-        # Type
-        lines.append(f"\n**Type:** {doc_type}")
-
-        # Path info
-        lines.append(f"**Path:** {path}")
-
-        # Try to extract key content from HTML
-        # This is a simple text extraction - could be enhanced with proper HTML parsing
-        import re
-
-        # Remove HTML tags and extract text content
-        text_content = re.sub(r"<[^>]+>", "", html_content)
-
-        # Clean up whitespace
-        text_content = re.sub(r"\s+", " ", text_content).strip()
+        lang = next(iter(self.config["languages"].keys()), "")
+        text_content = html_to_markdown.convert(
+            html_content,
+            html_to_markdown.ConversionOptions(
+                heading_style="atx", extract_metadata=False, code_language=lang
+            ),
+        )
 
         # Limit content length
         if len(text_content) > 2000:
             text_content = text_content[:2000] + "..."
 
         if text_content:
-            lines.append(f"\n## Content\n\n{text_content}")
+            lines.append(text_content)
 
         return "\n".join(lines)
 
