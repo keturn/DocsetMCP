@@ -1,6 +1,6 @@
-import sqlite3
 from typing import Union
 
+from docsetmcp.db_util import connect_readonly
 from docsetmcp.server import MatchedDocsetInfo, extractors, mcp
 from docsetmcp.common import DocsetInfo
 
@@ -412,8 +412,7 @@ def list_types(docset: str, language: str | None = None) -> str:
     extractor = extractors[docset]
     config = extractor.config
 
-    # Get the database connection
-    conn = sqlite3.connect(extractor.optimized_db)
+    conn = connect_readonly(extractor.search_index_db)
     cursor = conn.cursor()
 
     # Build language filter if specified
@@ -564,7 +563,7 @@ def list_entries(
     # Build the query
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
-    conn = sqlite3.connect(extractor.optimized_db)
+    conn = connect_readonly(extractor.search_index_db)
     cursor = conn.cursor()
 
     cursor.execute(

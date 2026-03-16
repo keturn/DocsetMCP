@@ -1,3 +1,5 @@
+from itertools import chain
+
 from docsetmcp.common import AppleDocumentation, ContentItem, ProcessedDocsetConfig
 
 
@@ -11,70 +13,46 @@ import sqlite3
 import tarfile
 from pathlib import Path
 
+from docsetmcp.db_util import connect_readonly
+from docsetmcp.server import DocsetMCPConfig
+
 
 class DashExtractor:
     config: ProcessedDocsetConfig
 
-    def __init__(self, docset_type: str, docsets_base_path: str | None = None):
+    def __init__(self, path: Path):
         # Load docset configuration using new config loader
         from docsetmcp.config_loader import ConfigLoader
+
+        self.docset = path
 
         loader = ConfigLoader()
 
         try:
-            self.config = loader.load_config(docset_type)
+            self.config = loader.load_config(path.name.replace(".docset", ""))
         except FileNotFoundError:
-            raise ValueError(f"Unsupported docset type: {docset_type}")
-
-        # Build list of paths to search for docsets
-        search_paths: list[str] = []
-
-        # Use custom docset location if provided, otherwise use configured paths
-        if docsets_base_path:
-            search_paths.append(os.path.expanduser(docsets_base_path))
-        else:
-            # Check environment variable for custom location
-            env_path = os.getenv("DOCSET_PATH")
-            if env_path:
-                search_paths.append(os.path.expanduser(env_path))
-
-            # Add additional paths from global config
-            from docsetmcp.server import docsetmcp_config
-
-            if docsetmcp_config.additional_docset_paths:
-                additional_paths = docsetmcp_config.parse_path_list(
-                    docsetmcp_config.additional_docset_paths
-                )
-                search_paths.extend(additional_paths)
-
-            # If no custom paths specified, use default Dash location
-            if not search_paths:
-                search_paths.append(
-                    os.path.expanduser("~/Library/Application Support/Dash/DocSets")
+            if auto_config := loader._generate_config_from_docset(path):  # type: ignore
+                self.config = auto_config
+            else:
+                raise RuntimeError(
+                    f"Failed to load or auto-generate config for docset at {path}"
                 )
 
-        # Find the docset in the search paths
-        self.docset: Path | None = None
-        for search_path in search_paths:
-            potential_docset = Path(search_path) / self.config["docset_path"]
-            if potential_docset.exists():
-                self.docset = potential_docset
-                break
-
-        # If not found, default to first search path for error reporting
-        if self.docset is None:
-            self.docset = Path(search_paths[0]) / self.config["docset_path"]
         # Set up paths based on docset format
+        resources = self.docset / "Contents" / "Resources"
+        if (resources / "optimizedIndex.dsidx").exists():
+            self.search_index_db = resources / "optimizedIndex.dsidx"
+        else:
+            self.search_index_db = resources / "docSet.dsidx"
+
         if self.config["format"] == "apple":
-            self.fs_dir = self.docset / "Contents/Resources/Documents/fs"
-            self.optimized_db = self.docset / "Contents/Resources/optimizedIndex.dsidx"
-            self.cache_db = self.docset / "Contents/Resources/Documents/cache.db"
+            self.fs_dir = resources / "Documents" / "fs"
+            self.cache_db = resources / "cache.db"
             # Cache for decompressed fs files
             self.fs_cache: dict[int, bytes] = {}
         elif self.config["format"] == "tarix":
-            self.optimized_db = self.docset / "Contents/Resources/optimizedIndex.dsidx"
-            self.tarix_archive = self.docset / "Contents/Resources/tarix.tgz"
-            self.tarix_index = self.docset / "Contents/Resources/tarixIndex.db"
+            self.tarix_archive = resources / "tarix.tgz"
+            self.tarix_index = resources / "tarixIndex.db"
             # Cache for extracted HTML content
             self.html_cache: dict[str, str] = {}
 
@@ -84,6 +62,12 @@ class DashExtractor:
                 f"{self.config['name']} docset not found at {self.docset}. "
                 "Please ensure the docset is available at the configured location."
             )
+
+    def _search_index(self) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
+        """A read-only connection to the search index database."""
+        conn = connect_readonly(self.search_index_db)
+        cursor = conn.cursor()
+        return conn, cursor
 
     def _normalize_query(self, query: str) -> list[str]:
         """Normalize query for better matching"""
@@ -115,8 +99,7 @@ class DashExtractor:
     def search(self, query: str, language: str = "swift", max_results: int = 3) -> str:
         """Search for Apple API documentation"""
         # Search the optimized index
-        conn = sqlite3.connect(self.optimized_db)
-        cursor = conn.cursor()
+        conn, cursor = self._search_index()
 
         # Filter by language using config
         if language not in self.config["languages"]:
@@ -416,8 +399,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
 
     def list_frameworks(self, filter_text: str | None = None) -> str:
         """List available frameworks/modules"""
-        conn = sqlite3.connect(self.optimized_db)
-        cursor = conn.cursor()
+        conn, cursor = self._search_index()
 
         if self.config["format"] == "apple" and self.config.get("framework_pattern"):
             framework_pattern = self.config["framework_pattern"]
@@ -504,7 +486,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
         prefix = lang_config["prefix"]
         uuid = prefix + suffix
 
-        conn = sqlite3.connect(self.cache_db)
+        conn = connect_readonly(self.cache_db)
         cursor = conn.cursor()
 
         cursor.execute(
@@ -690,7 +672,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
 
         try:
             # Query tarix index for file location
-            conn = sqlite3.connect(self.tarix_index)
+            conn = connect_readonly(self.tarix_index)
             cursor = conn.cursor()
 
             cursor.execute("SELECT hash FROM tarindex WHERE path = ?", (full_path,))
@@ -769,3 +751,26 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
             lines.append(f"\n## Content\n\n{text_content}")
 
         return "\n".join(lines)
+
+
+def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtractor]:
+    directories: list[str] = []
+    if server_config.docset_path:
+        directories.append(server_config.docset_path)
+    if from_env := os.getenv("DOCSET_PATH"):
+        directories.append(from_env)
+    if not directories:
+        directories.append("~/Library/Application Support/Dash/DocSets")
+
+    if server_config.additional_docset_paths:
+        directories.extend(
+            server_config.parse_path_list(server_config.additional_docset_paths)
+        )
+
+    search_paths = [Path(d).expanduser().absolute() for d in directories]
+
+    docset_locations = chain.from_iterable(p.rglob("*.docset") for p in search_paths)
+
+    extractors = [DashExtractor(d) for d in docset_locations]
+
+    return {e.config["name"]: e for e in extractors}

@@ -35,6 +35,7 @@ class ConfigLoader:
 
     def load_config(self, docset_name: str) -> ProcessedDocsetConfig:
         """Load a single docset configuration with defaults applied"""
+        docset_name = docset_name.lower().replace(".", "").replace("-", "_")
         config_file = self.config_dir / f"{docset_name}.yaml"
 
         if not config_file.exists():

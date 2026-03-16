@@ -422,7 +422,7 @@ class TestEdgeCases:
             extractor = DashExtractor("apple_api_reference")
 
             # Get the SQLite connection to examine raw results
-            conn = sqlite3.connect(extractor.optimized_db)
+            conn = sqlite3.connect(extractor.search_index_db)
             cursor = conn.cursor()
 
             # First, let's see what's actually in the database for CarPlay
