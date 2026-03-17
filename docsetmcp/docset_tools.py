@@ -1,11 +1,16 @@
 from typing import Union
 
+from fastmcp.tools.function_tool import (
+    tool,
+)  # https://github.com/PrefectHQ/fastmcp/issues/3530
+
+from docsetmcp.dash_extractor import DashExtractor
 from docsetmcp.db_util import connect_readonly
 from docsetmcp.server import MatchedDocsetInfo, extractors, mcp
 from docsetmcp.common import DocsetInfo
 
 
-@mcp.tool()
+@tool()
 def search_docs(
     query: str,
     docset: str,
@@ -63,7 +68,7 @@ def search_docs(
     return extractor.search(query, language, max_results)
 
 
-@mcp.tool()
+@tool()
 def list_available_docsets() -> str:
     """
     List all available docsets with detailed information for easy querying.
@@ -118,7 +123,7 @@ def list_available_docsets() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def list_frameworks(docset: str, filter: str | None = None) -> str:
     """
     List available frameworks/types in a specific docset.
@@ -137,7 +142,7 @@ def list_frameworks(docset: str, filter: str | None = None) -> str:
     return extractors[docset].list_frameworks(filter)
 
 
-@mcp.tool()
+@tool()
 def list_languages() -> str:
     """
     List all programming languages with available documentation and descriptions.
@@ -278,7 +283,7 @@ def list_languages() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def list_docsets_by_language(language: str) -> str:
     """
     Find all docsets that provide documentation for a specific programming language.
@@ -390,7 +395,7 @@ def list_docsets_by_language(language: str) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def list_types(docset: str, language: str | None = None) -> str:
     """
     List all documentation types available in a docset with examples.
@@ -503,7 +508,7 @@ def list_types(docset: str, language: str | None = None) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def list_entries(
     docset: str,
     type: str | None = None,

@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
 
+from fastmcp.tools.function_tool import tool  # https://github.com/PrefectHQ/fastmcp/issues/3530
+
 from docsetmcp.cheatsheet_extractor import CheatsheetExtractor
-from docsetmcp.server import cheatsheet_extractors, docsetmcp_config, mcp
+from docsetmcp.server import cheatsheet_extractors, docsetmcp_config
 
 
-@mcp.tool()
+@tool()
 def list_available_cheatsheets() -> str:
     """
     List all available Dash cheatsheets.
@@ -49,7 +51,7 @@ def list_available_cheatsheets() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def search_cheatsheet(
     cheatsheet: str, query: str = "", category: str = "", max_results: int = 10
 ) -> str:
@@ -81,7 +83,7 @@ def search_cheatsheet(
     return cheatsheet_extractors[cheatsheet].search(query, category, max_results)
 
 
-@mcp.tool()
+@tool()
 def list_cheatsheet_categories(cheatsheet: str) -> str:
     """
     List all categories in a specific cheatsheet.
@@ -118,7 +120,7 @@ def list_cheatsheet_categories(cheatsheet: str) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def fetch_cheatsheet(cheatsheet: str) -> str:
     """
     Fetch the entire content of a Dash cheatsheet.

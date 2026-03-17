@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from fastmcp.server.providers import FileSystemProvider
 from docsetmcp.server import (
     cheatsheet_extractors,
     docsetmcp_config,
@@ -6,12 +9,10 @@ from docsetmcp.server import (
     mcp,
 )
 
-# import tools to register them with MCP
-import docsetmcp.cheatsheet_tools  # pyright: ignore[reportUnusedImport]
-import docsetmcp.docset_tools  # pyright: ignore[reportUnusedImport]
 
 initialize_extractors()
 
+mcp.add_provider(FileSystemProvider(Path(__file__).parent))
 
 def main():
     """Main entry point for the MCP server"""

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Dash MCP Server - Extract documentation from Dash docsets as Markdown
 """
