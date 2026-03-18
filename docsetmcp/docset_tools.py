@@ -77,8 +77,10 @@ def list_available_docsets() -> str:
     if not extractors:
         return "No docsets are currently available. Please check your Dash installation."
 
-    lines = ["# Available Dash Docsets\n"]
-    lines.append("Use these docset identifiers with the `search_docs` tool:\n")
+    lines = [
+        "# Available Dash Docsets\n",
+        "Use these docset identifiers with the `search_docs` tool:\n",
+    ]
 
     for docset_id, extractor in sorted(extractors.items()):
         languages = list(extractor.language_names)
@@ -154,10 +156,10 @@ def list_languages() -> str:
         )
 
     # Format output
-    lines = ["# Available Languages and Their Documentation\n"]
-    lines.append(
-        "Explore documentation by language, then drill down into specific docsets and types.\n"
-    )
+    lines = [
+        "# Available Languages and Their Documentation\n",
+        "Explore documentation by language, then drill down into specific docsets and types.\n",
+    ]
 
     for lang in sorted(language_map.keys()):
         docsets = language_map[lang]
@@ -175,20 +177,20 @@ def list_languages() -> str:
 
             # Show language variants if available
             if ds["languages"]:
-                lang_str = ", ".join(f"`{l}`" for l in ds["languages"])
+                lang_str = ", ".join(ds["languages"])
                 lines.append(f"- **Language variants:** {lang_str}")
 
             # Add example commands
             lines.append("\n**Quick start commands:**")
-            lines.append(f"```")
-            lines.append(f"# List all types in this docset")
+            lines.append("```")
+            lines.append("# List all types in this docset")
             lines.append(f'list_types("{ds["docset"]}")')
             if ds["languages"]:
-                lines.append(f"\n# List types for specific language")
+                lines.append("\n# List types for specific language")
                 lines.append(f'list_types("{ds["docset"]}", language="{ds["languages"][0]}")')
-            lines.append(f"\n# Search for specific documentation")
+            lines.append("\n# Search for specific documentation")
             lines.append(f'search_docs("YourQuery", docset="{ds["docset"]}")')
-            lines.append(f"```")
+            lines.append("```")
             lines.append("")
 
         lines.append("---\n")
@@ -243,9 +245,13 @@ def list_docsets_by_language(language: str) -> str:
     if not matching_docsets:
         return f"No docsets found for language '{language}'. Try 'list_languages' to see available options."
 
-    # Format output
-    lines = [f"# Docsets for {language.title()}\n"]
-    lines.append("Use these with the `search_docs` tool:\n")
+    # fmt: off
+    lines = [dedent(f"""\
+        # Docsets for {language.title()}
+    
+        Use these with the `search_docs` tool:
+        """)
+    ] # fmt: on
 
     for docset_id, extractor, matched_lang in matching_docsets:
         lines.append(f"## {extractor.title}")
