@@ -183,13 +183,12 @@ class DashExtractor:
         conn, cursor = self._search_index()
 
         # Filter by language using config
-        if language not in self._config["languages"]:
+        if language not in self.languages:
             return f"Error: language must be one of {list(self._config['languages'].keys())}"
 
-        lang_config = self._config["languages"][language]
+        lang_config = self.languages[language]
         lang_filter = lang_config["filter"]
 
-        db_results = []
         query_variations = self._normalize_query(query)
 
         # Get dynamic type ordering
@@ -562,7 +561,7 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
             SELECT data_id, offset, length
             FROM refs
             WHERE uuid = ?
-        """,
+            """,
             (uuid,),
         )
 
@@ -600,11 +599,12 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
             if "metadata" in doc:
                 return doc
 
-        except Exception:
+        except FileNotFoundError:
             pass
 
         return None
 
+    # noinspection PyTypedDict
     def _format_as_markdown(self, doc: AppleDocumentation, name: str, doc_type: str) -> str:
         """Format documentation as Markdown"""
         lines: list[str] = []
@@ -618,13 +618,13 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
         lines.append(f"\n**Type:** {doc_type}")
 
         # Framework
-        modules = metadata.get("modules", [])
+        modules = metadata.get("modules", [])  # type: ignore
         if modules:
-            names = [m.get("name", "") for m in modules]
+            names = [m.get("name", "") for m in modules]  # type: ignore
             lines.append(f"**Framework:** {', '.join(names)}")
 
         # Availability
-        platforms = metadata.get("platforms", [])
+        platforms = metadata.get("platforms", [])  # type: ignore
         if platforms:
             avail: list[str] = []
             for p in platforms:
@@ -638,15 +638,15 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
                 lines.append(f"**Available on:** {', '.join(avail)}")
 
         # Abstract/Summary
-        abstract = doc.get("abstract", [])
+        abstract = doc.get("abstract", [])  # type: ignore
         if abstract:
-            text = self._extract_text(abstract)
+            text = self._extract_text(abstract)  # type: ignore
             if text:
                 lines.append(f"\n## Summary\n\n{text}")
 
         # Primary Content Sections
         sections = doc.get("primaryContentSections", [])
-        for section in sections:
+        for section in sections:  # type: ignore
             kind = section.get("kind", "")
 
             if kind == "declarations":
@@ -729,6 +729,8 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
                 soup.find(id=url.fragment) or soup.find("a", attrs={"name": url.fragment})
             ):
                 # The target is typically an anchor or a heading. Move up to its container element for relevant context.
+                # wtf pycharm. https://youtrack.jetbrains.com/issue/PY-88479
+                # noinspection PyUnboundLocalVariable
                 soup = target.parent or target
 
         return soup.decode()
@@ -793,7 +795,7 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
                                 self.html_cache[full_path] = content
                                 return content
 
-        except Exception:
+        except FileNotFoundError:
             pass
 
         return None
