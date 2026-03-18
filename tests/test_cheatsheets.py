@@ -26,9 +26,7 @@ class TestCheatsheetExtractor:
 
     @patch("docsetmcp.server.Path")
     @patch("os.path.expanduser")
-    def test_init_success(
-        self, mock_expanduser: MagicMock, mock_path_class: MagicMock
-    ) -> None:
+    def test_init_success(self, mock_expanduser: MagicMock, mock_path_class: MagicMock) -> None:
         """Test successful initialization"""
         mock_expanduser.return_value = "/mock/path"
 
@@ -160,9 +158,7 @@ class TestCheatsheetExtractor:
 
     @patch("builtins.open", create=True)
     @patch("pathlib.Path.exists")
-    def test_extract_entry_content(
-        self, mock_exists: MagicMock, mock_open: MagicMock
-    ) -> None:
+    def test_extract_entry_content(self, mock_exists: MagicMock, mock_open: MagicMock) -> None:
         """Test extracting content from HTML"""
         mock_exists.return_value = True
 

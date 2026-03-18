@@ -8,7 +8,6 @@ from fastmcp import FastMCP
 from fastmcp.server.lifespan import lifespan
 
 
-
 # Global configuration class to hold runtime settings
 class DocsetMCPConfig:
     def __init__(self):
@@ -51,9 +50,7 @@ def initialize_extractors():
 @lifespan
 async def app_lifespan(_server: FastMCP):
     initialize_extractors()
-    yield {
-        "extractors": extractors
-    }
+    yield {"extractors": extractors}
 
 
 # Create MCP server

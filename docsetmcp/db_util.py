@@ -14,11 +14,8 @@ def escape_like_pattern(s: str, escape: str = "\x1b") -> str:
     Must be used in conjunction with an ESCAPE clause in the SQL query, e.g.:
     ... LIKE ? ESCAPE char(0x1B)
     """
-    return (
-        s.replace(escape, escape + escape)
-        .replace("%", escape + "%")
-        .replace("_", escape + "_")
-    )
+    return s.replace(escape, escape + escape).replace("%", escape + "%").replace("_", escape + "_")
+
 
 def make_unique[T](small_list: list[T]) -> list[T]:
     """Make a list unique while preserving order.

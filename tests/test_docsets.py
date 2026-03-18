@@ -36,9 +36,7 @@ class TestDocsets:
         "yaml_path",
         [
             pytest.param(p, id=p.name)
-            for p in sorted(
-                (Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml")
-            )
+            for p in sorted((Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml"))
         ],
     )
     def test_docset_exists(self, yaml_path: Path):
@@ -46,9 +44,7 @@ class TestDocsets:
         config = self.load_yaml_config(yaml_path)
 
         # Build the expected docset path
-        dash_docsets_path = os.path.expanduser(
-            "~/Library/Application Support/Dash/DocSets"
-        )
+        dash_docsets_path = os.path.expanduser("~/Library/Application Support/Dash/DocSets")
         docset_folder = str(config.get("docset_name", ""))
         docset_file = str(config.get("docset_path", ""))
         full_docset_path = Path(dash_docsets_path) / docset_folder / docset_file
@@ -60,9 +56,7 @@ class TestDocsets:
         "yaml_path",
         [
             pytest.param(p, id=p.name)
-            for p in sorted(
-                (Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml")
-            )
+            for p in sorted((Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml"))
         ],
     )
     def test_docset_search(self, yaml_path: Path):
@@ -114,17 +108,13 @@ class TestDocsets:
             except Exception:
                 continue
 
-        assert (
-            found_results
-        ), f"No search results found for any test query in {config.get('name')}"
+        assert found_results, f"No search results found for any test query in {config.get('name')}"
 
     @pytest.mark.parametrize(
         "yaml_path",
         [
             pytest.param(p, id=p.name)
-            for p in sorted(
-                (Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml")
-            )
+            for p in sorted((Path(__file__).parent.parent / "docsetmcp" / "docsets").glob("*.y*ml"))
         ],
     )
     def test_docset_types(self, yaml_path: Path):
@@ -148,9 +138,7 @@ class TestDocsets:
             pytest.skip("No types configured")
 
         # Build database path
-        dash_docsets_path = os.path.expanduser(
-            "~/Library/Application Support/Dash/DocSets"
-        )
+        dash_docsets_path = os.path.expanduser("~/Library/Application Support/Dash/DocSets")
         docset_folder = config.get("docset_name", "")
         docset_file = config.get("docset_path", "")
         db_path = (
@@ -187,9 +175,9 @@ class TestDocsets:
             if configured_type not in existing_types:
                 missing_types.append(configured_type)
 
-        assert (
-            not missing_types
-        ), f"Missing types: {missing_types}. Existing types: {sorted(existing_types)}"
+        assert not missing_types, (
+            f"Missing types: {missing_types}. Existing types: {sorted(existing_types)}"
+        )
 
     def test_yaml_structure(self):
         """Test that all YAML files have the required structure"""
@@ -212,9 +200,7 @@ class TestDocsets:
 
             # Check required fields
             for field in required_fields:
-                assert (
-                    field in config
-                ), f"{yaml_path.name} missing required field: {field}"
+                assert field in config, f"{yaml_path.name} missing required field: {field}"
 
             # Check format is valid
             assert config["format"] in [
@@ -224,13 +210,9 @@ class TestDocsets:
 
             # Check languages structure
             languages = config["languages"]
-            assert isinstance(
-                languages, dict
-            ), f"{yaml_path.name} languages must be a dict"
+            assert isinstance(languages, dict), f"{yaml_path.name} languages must be a dict"
             # After isinstance check, type checker knows languages is a dict
-            assert (
-                len(languages) > 0
-            ), f"{yaml_path.name} must have at least one language"
+            assert len(languages) > 0, f"{yaml_path.name} must have at least one language"
 
             # Check types structure
             types = config["types"]
@@ -261,14 +243,10 @@ class TestDocsets:
                 docset_type = yaml_path.stem
 
                 # Check if docset exists
-                dash_docsets_path = os.path.expanduser(
-                    "~/Library/Application Support/Dash/DocSets"
-                )
+                dash_docsets_path = os.path.expanduser("~/Library/Application Support/Dash/DocSets")
                 docset_folder = config.get("docset_name", "")
                 docset_file = config.get("docset_path", "")
-                full_docset_path = (
-                    Path(dash_docsets_path) / str(docset_folder) / str(docset_file)
-                )
+                full_docset_path = Path(dash_docsets_path) / str(docset_folder) / str(docset_file)
 
                 if full_docset_path.exists():
                     working_docsets.append(docset_type)
@@ -297,7 +275,7 @@ class TestDocsetContent:
             extractor = DashExtractor("nodejs")
             result = extractor.search("readFile", language="javascript", max_results=1)
             assert "readFile" in result or "fs" in result
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             pytest.skip("Node.js docset not installed")
 
     def test_python_documentation(self):
@@ -309,7 +287,7 @@ class TestDocsetContent:
                 result = extractor.search("list", language="python", max_results=1)
                 assert "list" in result.lower()
                 return  # Success, exit
-            except (FileNotFoundError, ValueError):
+            except FileNotFoundError, ValueError:
                 continue
 
         pytest.skip("Python docset not installed")
@@ -360,11 +338,7 @@ class TestEdgeCases:
             result3 = extractor.search("app intent", language="swift", max_results=1)
 
             # All three should return results (or same error if not found)
-            assert (
-                "AppIntent" in result1
-                or "AppIntent" in result2
-                or "AppIntent" in result3
-            )
+            assert "AppIntent" in result1 or "AppIntent" in result2 or "AppIntent" in result3
 
             # Test another example
             result4 = extractor.search("URL Session", language="swift", max_results=1)
@@ -382,15 +356,9 @@ class TestEdgeCases:
             extractor = DashExtractor("apple_api_reference")
 
             # Test different case variations
-            result_lower = extractor.search(
-                "urlsession", language="swift", max_results=1
-            )
-            result_upper = extractor.search(
-                "URLSESSION", language="swift", max_results=1
-            )
-            result_mixed = extractor.search(
-                "UrlSession", language="swift", max_results=1
-            )
+            result_lower = extractor.search("urlsession", language="swift", max_results=1)
+            result_upper = extractor.search("URLSESSION", language="swift", max_results=1)
+            result_mixed = extractor.search("UrlSession", language="swift", max_results=1)
 
             # All should find URLSession
             for result in [result_lower, result_upper, result_mixed]:
@@ -405,9 +373,7 @@ class TestEdgeCases:
             extractor = DashExtractor("apple_api_reference")
 
             # Search for something that definitely doesn't exist
-            result = extractor.search(
-                "xyzabc123nonexistent", language="swift", max_results=1
-            )
+            result = extractor.search("xyzabc123nonexistent", language="swift", max_results=1)
 
             # Should say "No matches found" not "couldn't extract documentation"
             assert "No matches found" in result
@@ -489,25 +455,23 @@ class TestEdgeCases:
             print(f"Found entries: {found_entries}")
 
             # We should find at least some name-matching entries
-            assert (
-                len(found_entries) > 0
-            ), f"Should find entries with 'CarPlay' in their names. Result:\n{result[:500]}..."
+            assert len(found_entries) > 0, (
+                f"Should find entries with 'CarPlay' in their names. Result:\n{result[:500]}..."
+            )
 
             # Check that the framework has a drilldown note
-            assert (
-                "additional members not shown" in result
-            ), "Framework should show drilldown note"
-            assert (
-                "search_docs('CarPlay'" in result or "list_entries" in result
-            ), "Should provide drilldown guidance"
+            assert "additional members not shown" in result, "Framework should show drilldown note"
+            assert "search_docs('CarPlay'" in result or "list_entries" in result, (
+                "Should provide drilldown guidance"
+            )
 
             # Test that ranking works - exact match should come before prefix/substring matches
             if "CarPlay" in result and "carPlay" in result:
                 framework_pos = result.index("# CarPlay\n")  # Framework entry
                 property_pos = result.index("carPlay")  # Property entry
-                assert (
-                    framework_pos < property_pos
-                ), "Exact match 'CarPlay' framework should come before 'carPlay' property"
+                assert framework_pos < property_pos, (
+                    "Exact match 'CarPlay' framework should come before 'carPlay' property"
+                )
 
         except FileNotFoundError:
             pytest.skip("Apple docset not installed")

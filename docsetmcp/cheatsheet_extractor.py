@@ -33,11 +33,7 @@ class CheatsheetExtractor:
             # If no custom paths specified, use default Dash location
             if not search_paths:
                 search_paths.append(
-                    Path(
-                        os.path.expanduser(
-                            "~/Library/Application Support/Dash/Cheat Sheets"
-                        )
-                    )
+                    Path(os.path.expanduser("~/Library/Application Support/Dash/Cheat Sheets"))
                 )
 
         # Find the cheatsheet in the search paths
@@ -93,8 +89,7 @@ class CheatsheetExtractor:
         for variant in variations:
             for path in self.cheatsheets_path.iterdir():
                 if path.is_dir() and (
-                    path.name.lower() == variant.lower()
-                    or variant.lower() in path.name.lower()
+                    path.name.lower() == variant.lower() or variant.lower() in path.name.lower()
                 ):
                     return path
 
@@ -190,9 +185,7 @@ class CheatsheetExtractor:
 
                     tr_match = None
                     for pattern in patterns:
-                        tr_match = re.search(
-                            pattern, html_content, re.DOTALL | re.IGNORECASE
-                        )
+                        tr_match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
                         if tr_match:
                             break
 
@@ -209,9 +202,7 @@ class CheatsheetExtractor:
                         )
 
                         # Also check for command column (like in Xcode cheatsheet)
-                        command_pattern = (
-                            r'<td class=[\'"]command[\'"]>.*?<code>(.*?)</code>'
-                        )
+                        command_pattern = r'<td class=[\'"]command[\'"]>.*?<code>(.*?)</code>'
                         command_match = re.search(
                             command_pattern, tr_html, re.DOTALL | re.IGNORECASE
                         )
@@ -280,9 +271,7 @@ class CheatsheetExtractor:
                                     .replace("&gt;", ">")
                                     .replace("&amp;", "&")
                                 )
-                                text = text.replace(
-                                    f"__CODE_{idx}__", f"\n```\n{code}\n```\n"
-                                )
+                                text = text.replace(f"__CODE_{idx}__", f"\n```\n{code}\n```\n")
 
                             # Restore inline code
                             for idx, code in enumerate(inline_codes):
@@ -425,7 +414,9 @@ class CheatsheetExtractor:
             import re
 
             # Look for the entry in the HTML
-            pattern = rf'<td class="description">{re.escape(name)}</td>\s*<td class="command">(.*?)</td>'
+            pattern = (
+                rf'<td class="description">{re.escape(name)}</td>\s*<td class="command">(.*?)</td>'
+            )
             match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
 
             if match:
@@ -483,15 +474,11 @@ class CheatsheetExtractor:
 
             # Find all section.category blocks
             section_pattern = r'<section class=[\'"]category[\'"]>(.*?)</section>'
-            section_matches = re.findall(
-                section_pattern, html_content, re.DOTALL | re.IGNORECASE
-            )
+            section_matches = re.findall(section_pattern, html_content, re.DOTALL | re.IGNORECASE)
 
             for section_html in section_matches:
                 # Extract section title from h2
-                h2_match = re.search(
-                    r"<h2[^>]*>\s*(.*?)\s*</h2>", section_html, re.IGNORECASE
-                )
+                h2_match = re.search(r"<h2[^>]*>\s*(.*?)\s*</h2>", section_html, re.IGNORECASE)
                 if not h2_match:
                     continue
 
@@ -502,9 +489,7 @@ class CheatsheetExtractor:
 
                 # Find all table rows with entries
                 tr_pattern = r"<tr[^>]*>(.*?)</tr>"
-                tr_matches = re.findall(
-                    tr_pattern, section_html, re.DOTALL | re.IGNORECASE
-                )
+                tr_matches = re.findall(tr_pattern, section_html, re.DOTALL | re.IGNORECASE)
 
                 for tr_html in tr_matches:
                     # Extract entry name
@@ -520,9 +505,7 @@ class CheatsheetExtractor:
 
                     # Extract notes/content
                     notes_pattern = r'<div class=[\'"]notes[\'"]>(.*?)</div>'
-                    notes_matches = re.findall(
-                        notes_pattern, tr_html, re.DOTALL | re.IGNORECASE
-                    )
+                    notes_matches = re.findall(notes_pattern, tr_html, re.DOTALL | re.IGNORECASE)
 
                     entry_content: list[str] = []
                     for notes in notes_matches:
@@ -531,9 +514,7 @@ class CheatsheetExtractor:
 
                         # Extract code blocks
                         code_pattern = r"<pre[^>]*>(.*?)</pre>"
-                        code_matches = re.findall(
-                            code_pattern, notes, re.DOTALL | re.IGNORECASE
-                        )
+                        code_matches = re.findall(code_pattern, notes, re.DOTALL | re.IGNORECASE)
 
                         # Replace code blocks with placeholders
                         temp_notes = notes
@@ -542,15 +523,11 @@ class CheatsheetExtractor:
                                 f'<pre class="highlight plaintext">{code}</pre>',
                                 f"__CODE_{idx}__",
                             )
-                            temp_notes = temp_notes.replace(
-                                f"<pre>{code}</pre>", f"__CODE_{idx}__"
-                            )
+                            temp_notes = temp_notes.replace(f"<pre>{code}</pre>", f"__CODE_{idx}__")
 
                         # Extract inline code
                         inline_code_pattern = r"<code[^>]*>(.*?)</code>"
-                        inline_codes = re.findall(
-                            inline_code_pattern, temp_notes, re.IGNORECASE
-                        )
+                        inline_codes = re.findall(inline_code_pattern, temp_notes, re.IGNORECASE)
 
                         # Replace inline code with placeholders
                         for idx, code in enumerate(inline_codes):
@@ -573,16 +550,12 @@ class CheatsheetExtractor:
                                 .replace("&#39;", "'")
                                 .replace("&quot;", '"')
                             )
-                            text = text.replace(
-                                f"__CODE_{idx}__", f"\\n```\\n{code}\\n```\\n"
-                            )
+                            text = text.replace(f"__CODE_{idx}__", f"\\n```\\n{code}\\n```\\n")
 
                         # Restore inline code
                         for idx, code in enumerate(inline_codes):
                             code = (
-                                code.replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&amp;", "&")
+                                code.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
                             )
                             text = text.replace(f"__INLINE_{idx}__", f"`{code}`")
 
@@ -597,9 +570,7 @@ class CheatsheetExtractor:
                             entry_content.append(text)
 
                     if entry_content:
-                        entries.append(
-                            f"### {entry_name}\n" + "\n\n".join(entry_content)
-                        )
+                        entries.append(f"### {entry_name}\n" + "\n\n".join(entry_content))
 
                 if entries:
                     sections.append(f"## {section_title}\n" + "\n\n".join(entries))

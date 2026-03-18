@@ -75,20 +75,14 @@ def list_available_docsets() -> str:
         Formatted list of available docsets with usage examples
     """
     if not extractors:
-        return (
-            "No docsets are currently available. Please check your Dash installation."
-        )
+        return "No docsets are currently available. Please check your Dash installation."
 
     lines = ["# Available Dash Docsets\n"]
     lines.append("Use these docset identifiers with the `search_docs` tool:\n")
 
     for docset_id, extractor in sorted(extractors.items()):
         languages = list(extractor.language_names)
-        lang_str = (
-            ", ".join(languages)
-            if languages
-            else "no languages"
-        )
+        lang_str = ", ".join(languages) if languages else "no languages"
 
         lines.append(f"## {extractor.title}")
 
@@ -105,9 +99,7 @@ def list_available_docsets() -> str:
                 f'- **Example:** `search_docs("YourQuery", docset="{docset_id}", language="{default_lang}")`'
             )
         else:
-            lines.append(
-                f'- **Example:** `search_docs("YourQuery", docset="{docset_id}")`'
-            )
+            lines.append(f'- **Example:** `search_docs("YourQuery", docset="{docset_id}")`')
 
         lines.append("")  # Empty line between docsets
 
@@ -145,9 +137,7 @@ def list_languages() -> str:
         Detailed list of languages with docsets, descriptions, and usage examples
     """
     if not extractors:
-        return (
-            "No docsets are currently available. Please check your Dash installation."
-        )
+        return "No docsets are currently available. Please check your Dash installation."
 
     # Group docsets by language
     language_map: dict[str, list[DocsetInfo]] = defaultdict(list)
@@ -192,27 +182,21 @@ def list_languages() -> str:
             lines.append("\n**Quick start commands:**")
             lines.append(f"```")
             lines.append(f"# List all types in this docset")
-            lines.append(f"list_types(\"{ds['docset']}\")")
+            lines.append(f'list_types("{ds["docset"]}")')
             if ds["languages"]:
                 lines.append(f"\n# List types for specific language")
-                lines.append(
-                    f"list_types(\"{ds['docset']}\", language=\"{ds['languages'][0]}\")"
-                )
+                lines.append(f'list_types("{ds["docset"]}", language="{ds["languages"][0]}")')
             lines.append(f"\n# Search for specific documentation")
-            lines.append(f"search_docs(\"YourQuery\", docset=\"{ds['docset']}\")")
+            lines.append(f'search_docs("YourQuery", docset="{ds["docset"]}")')
             lines.append(f"```")
             lines.append("")
 
         lines.append("---\n")
 
-    lines.append(
-        f"**Summary:** {len(language_map)} languages, {len(extractors)} docsets total"
-    )
+    lines.append(f"**Summary:** {len(language_map)} languages, {len(extractors)} docsets total")
     lines.append("\n**Next steps:**")
     lines.append('1. Use `list_types("docset_id")` to explore documentation types')
-    lines.append(
-        '2. Use `list_entries("docset_id", type="TypeName")` to browse entries'
-    )
+    lines.append('2. Use `list_entries("docset_id", type="TypeName")` to browse entries')
     lines.append("3. Use `search_docs()` to find specific documentation")
 
     return "\n".join(lines)
@@ -233,9 +217,7 @@ def list_docsets_by_language(language: str) -> str:
         Formatted list of docsets with usage examples for the specified language
     """
     if not extractors:
-        return (
-            "No docsets are currently available. Please check your Dash installation."
-        )
+        return "No docsets are currently available. Please check your Dash installation."
 
     language_lower = language.lower()
     matching_docsets: list[tuple[str, DashExtractor, str]] = []
@@ -274,7 +256,7 @@ def list_docsets_by_language(language: str) -> str:
         lines.append(f"- **Docset ID:** `{docset_id}`")
 
         if extractor.language_names:
-            lines.append(f"- **Languages:** {", ".join(extractor.language_names)}")
+            lines.append(f"- **Languages:** {', '.join(extractor.language_names)}")
 
         lines.append(
             f'- **Example:** `search_docs("YourQuery", docset="{docset_id}", language="{matched_lang}")`'
@@ -487,9 +469,7 @@ def list_entries(
             filters.append(f"starts_with={starts_with}")
         if contains:
             filters.append(f"contains={contains}")
-        return (
-            f"No entries found in {extractor.title} with filters: {', '.join(filters)}"
-        )
+        return f"No entries found in {extractor.title} with filters: {', '.join(filters)}"
 
     # Format output
     lines = [f"# Documentation Entries in {extractor.title}"]

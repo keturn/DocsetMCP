@@ -44,9 +44,7 @@ def list_available_cheatsheets() -> str:
         return "No cheatsheets found. Please download some from Dash."
 
     lines = ["Available cheatsheets:"] + cheatsheets
-    lines.append(
-        "\nUse the simplified name (e.g., 'git' instead of 'Git') when searching."
-    )
+    lines.append("\nUse the simplified name (e.g., 'git' instead of 'Git') when searching.")
 
     return "\n".join(lines)
 
@@ -113,9 +111,7 @@ def list_cheatsheet_categories(cheatsheet: str) -> str:
     for cat in categories:
         lines.append(f"- {cat}")
 
-    lines.append(
-        f"\n\nUse these category names with search_cheatsheet to filter results."
-    )
+    lines.append(f"\n\nUse these category names with search_cheatsheet to filter results.")
 
     return "\n".join(lines)
 

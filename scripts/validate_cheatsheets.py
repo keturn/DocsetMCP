@@ -32,7 +32,7 @@ sys.stderr = _original_stderr
 
 def test_cheatsheet(name: str) -> bool:
     """Test a single cheatsheet"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Testing: {name}")
     print("=" * 60)
 
@@ -51,9 +51,7 @@ def test_cheatsheet(name: str) -> bool:
         full_content = search_cheatsheet(name)
         lines = full_content.split("\n")
         non_empty_lines = [l for l in lines if l.strip()]
-        print(
-            f"✓ Full content extracted: {len(lines)} lines, {len(non_empty_lines)} non-empty"
-        )
+        print(f"✓ Full content extracted: {len(lines)} lines, {len(non_empty_lines)} non-empty")
 
         # Test 4: Can we extract a category? (test first category if available)
         if categories:
@@ -66,9 +64,7 @@ def test_cheatsheet(name: str) -> bool:
 
             # Check if we got actual content (not just headers)
             has_code = "```" in cat_content
-            has_commands = any(
-                "##" in line for line in cat_lines[2:]
-            )  # Skip title lines
+            has_commands = any("##" in line for line in cat_lines[2:])  # Skip title lines
             if has_code or has_commands:
                 print(
                     f"  → Contains {'code blocks' if has_code else ''}{' and ' if has_code and has_commands else ''}{'commands' if has_commands else ''}"
@@ -110,7 +106,7 @@ def main() -> None:
             failed.append(cs)
 
     # Summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("SUMMARY")
     print("=" * 60)
     print(f"Total cheatsheets: {len(cheatsheets)}")
@@ -123,7 +119,7 @@ def main() -> None:
             print(f"  - {f}")
 
     # Test a few specific ones in detail
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("DETAILED TEST SAMPLES")
     print("=" * 60)
 

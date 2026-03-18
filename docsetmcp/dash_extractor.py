@@ -65,9 +65,7 @@ class DashExtractor:
             if auto_config := loader._generate_config_from_docset(path):  # type: ignore
                 self._config = auto_config
             else:
-                raise RuntimeError(
-                    f"Failed to load or auto-generate config for docset at {path}"
-                )
+                raise RuntimeError(f"Failed to load or auto-generate config for docset at {path}")
 
         make_unique(self.identifiers)
         make_unique(self.titles)
@@ -118,9 +116,7 @@ class DashExtractor:
             with plist_path.open("rb") as f:
                 plist_data = plistlib.load(f)
         except FileNotFoundError:
-            logger.warning(
-                "Info.plist not found in %s. This is unusual.", plist_path.parent
-            )
+            logger.warning("Info.plist not found in %s. This is unusual.", plist_path.parent)
             return
 
         if bundle_id := plist_data.get("CFBundleIdentifier"):
@@ -181,9 +177,7 @@ class DashExtractor:
         case_parts.append("END")
         return "\n".join(case_parts)
 
-    def search(
-        self, query: str, language: Optional[str] = None, max_results: int = 3
-    ) -> str:
+    def search(self, query: str, language: Optional[str] = None, max_results: int = 3) -> str:
         """Search for Apple API documentation"""
         # Search the optimized index
         conn, cursor = self._search_index()
@@ -214,9 +208,7 @@ class DashExtractor:
 
         # Collect all results, not just from first successful query
         all_results: list[tuple[str, str, str]] = []
-        seen_entries: set[tuple[str, str]] = (
-            set()
-        )  # Track (name, type) to avoid duplicates
+        seen_entries: set[tuple[str, str]] = set()  # Track (name, type) to avoid duplicates
 
         # Try exact match with all query variations (case-insensitive)
         for q in query_variations:
@@ -283,11 +275,7 @@ class DashExtractor:
             # Extract the documentation path pattern
             doc_path_pattern = ""
             if "/documentation/" in exact_match_path:
-                doc_path = (
-                    exact_match_path.split("/documentation/")[1]
-                    .split("?")[0]
-                    .split("#")[0]
-                )
+                doc_path = exact_match_path.split("/documentation/")[1].split("?")[0].split("#")[0]
                 doc_path_pattern = f"%/documentation/{doc_path}/%"
 
             if doc_path_pattern:
@@ -368,9 +356,7 @@ class DashExtractor:
                     # If path contains language parameter, use that instead
                     path_language: str = language
                     if "&language=" in path:
-                        path_language = (
-                            path.split("&language=")[1].split("&")[0].split("#")[0]
-                        )
+                        path_language = path.split("&language=")[1].split("&")[0].split("#")[0]
 
                     doc = self._extract_by_request_key(request_key, path_language)
 
@@ -395,9 +381,7 @@ class DashExtractor:
                     html_content = self._extract_by_path(path)
 
                 if html_content:
-                    markdown = self._format_html_as_markdown(
-                        html_content, name, doc_type, path
-                    )
+                    markdown = self._format_html_as_markdown(html_content, name, doc_type, path)
 
                     # Add member note if this is the exact match and has members
                     if (
@@ -427,9 +411,7 @@ class DashExtractor:
 
                     # Add type and framework info
                     for line in lines[1:10]:
-                        if line.startswith("**Type:**") or line.startswith(
-                            "**Framework:**"
-                        ):
+                        if line.startswith("**Type:**") or line.startswith("**Framework:**"):
                             summary_lines.append(f"   {line}")
 
                     # Add first line of summary if available
@@ -444,9 +426,7 @@ class DashExtractor:
                     summaries.append("\n".join(summary_lines))
 
                 header = f"Found {len(results)} results for '{query}':\n\n"
-                footer = (
-                    "\n\nSearch for each item individually to see full documentation."
-                )
+                footer = "\n\nSearch for each item individually to see full documentation."
                 return header + "\n\n".join(summaries) + footer
             elif len(results) <= 100:
                 # 6-100 results: return full content with separators
@@ -485,7 +465,7 @@ class DashExtractor:
 Found but couldn't extract:
 {chr(10).join(entries_info)}
 
-Try opening Dash and ensuring the '{self._config['name']}' docset is fully downloaded."""
+Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downloaded."""
 
     def list_frameworks(self, filter_text: str | None = None) -> str:
         """List available frameworks/modules"""
@@ -514,9 +494,7 @@ Try opening Dash and ensuring the '{self._config['name']}' docset is fully downl
                 """
 
             if filter_text:
-                query = query.replace(
-                    "WHERE", f"WHERE framework LIKE '%{filter_text}%' AND"
-                )
+                query = query.replace("WHERE", f"WHERE framework LIKE '%{filter_text}%' AND")
 
             cursor.execute(query)
 
@@ -597,9 +575,7 @@ Try opening Dash and ensuring the '{self._config['name']}' docset is fully downl
 
         return None
 
-    def _extract_from_fs(
-        self, data_id: int, offset: int, length: int
-    ) -> AppleDocumentation | None:
+    def _extract_from_fs(self, data_id: int, offset: int, length: int) -> AppleDocumentation | None:
         """Extract JSON from fs file at specific offset"""
         fs_file = self.fs_dir / str(data_id)
 
@@ -629,9 +605,7 @@ Try opening Dash and ensuring the '{self._config['name']}' docset is fully downl
 
         return None
 
-    def _format_as_markdown(
-        self, doc: AppleDocumentation, name: str, doc_type: str
-    ) -> str:
+    def _format_as_markdown(self, doc: AppleDocumentation, name: str, doc_type: str) -> str:
         """Format documentation as Markdown"""
         lines: list[str] = []
         metadata = doc.get("metadata", {})
@@ -752,8 +726,7 @@ Try opening Dash and ensuring the '{self._config['name']}' docset is fully downl
 
         if url.fragment:
             if target := (
-                soup.find(id=url.fragment)
-                or soup.find("a", attrs={"name": url.fragment})
+                soup.find(id=url.fragment) or soup.find("a", attrs={"name": url.fragment})
             ):
                 # The target is typically an anchor or a heading. Move up to its container element for relevant context.
                 soup = target.parent or target
@@ -813,15 +786,10 @@ Try opening Dash and ensuring the '{self._config['name']}' docset is fully downl
                     # If exact path fails, try to find by name
                     target_file = full_path.split("/")[-1]  # Get just the filename
                     for member in tar.getmembers():
-                        if (
-                            member.name.endswith(target_file)
-                            and clean_path in member.name
-                        ):
+                        if member.name.endswith(target_file) and clean_path in member.name:
                             extracted_file = tar.extractfile(member)
                             if extracted_file:
-                                content = extracted_file.read().decode(
-                                    "utf-8", errors="ignore"
-                                )
+                                content = extracted_file.read().decode("utf-8", errors="ignore")
                                 self.html_cache[full_path] = content
                                 return content
 
@@ -883,9 +851,7 @@ def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtracto
         directories.append("~/Library/Application Support/Dash/DocSets")
 
     if server_config.additional_docset_paths:
-        directories.extend(
-            server_config.parse_path_list(server_config.additional_docset_paths)
-        )
+        directories.extend(server_config.parse_path_list(server_config.additional_docset_paths))
 
     search_paths = [Path(d).expanduser().absolute() for d in directories]
 

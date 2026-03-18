@@ -17,7 +17,7 @@ initialize_extractors()
 
 mcp.add_provider(FileSystemProvider(Path(__file__).parent))
 
-for (web_path, handler) in web.routes:
+for web_path, handler in web.routes:
     mcp.custom_route(web_path, ["GET", "HEAD"])(handler)
 
 
@@ -37,9 +37,7 @@ def main():
         epilog="For more information, visit: https://github.com/codybrom/docsetmcp",
     )
 
-    parser.add_argument(
-        "--version", "-v", action="version", version=f"DocsetMCP {__version__}"
-    )
+    parser.add_argument("--version", "-v", action="version", version=f"DocsetMCP {__version__}")
 
     parser.add_argument(
         "--list-docsets",
