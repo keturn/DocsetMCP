@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Union
 
 from fastmcp.tools.function_tool import (
@@ -6,7 +7,7 @@ from fastmcp.tools.function_tool import (
 
 from docsetmcp.dash_extractor import DashExtractor
 from docsetmcp.db_util import connect_readonly
-from docsetmcp.server import MatchedDocsetInfo, extractors, mcp
+from docsetmcp.server import extractors
 from docsetmcp.common import DocsetInfo
 
 
@@ -56,15 +57,6 @@ def search_docs(
     if not 1 <= max_results <= 10:
         return "Error: max_results must be between 1 and 10"
 
-    # Use docset-specific default language if none provided
-    if language is None:
-        # Get the first configured language as default
-        config = extractor.config
-        if "languages" in config and config["languages"]:
-            language = next(iter(config["languages"]))
-        else:
-            language = "swift"  # Fallback for compatibility
-
     return extractor.search(query, language, max_results)
 
 
@@ -91,18 +83,17 @@ def list_available_docsets() -> str:
     lines.append("Use these docset identifiers with the `search_docs` tool:\n")
 
     for docset_id, extractor in sorted(extractors.items()):
-        config = extractor.config
-        languages = list(config.get("languages", {}).keys())
+        languages = list(extractor.language_names)
         lang_str = (
-            ", ".join(f"`{lang}`" for lang in languages)
+            ", ".join(languages)
             if languages
             else "no languages"
         )
 
-        lines.append(f"## {config.get('name', docset_id)}")
+        lines.append(f"## {extractor.title}")
 
-        if "description" in config:
-            lines.append(f"*{config['description']}*\n")
+        if extractor.description:
+            lines.append(f"*{extractor.description}*\n")
 
         lines.append(f"- **Docset ID:** `{docset_id}`")
         lines.append(f"- **Languages:** {lang_str}")
@@ -159,74 +150,18 @@ def list_languages() -> str:
         )
 
     # Group docsets by language
-    language_map: dict[str, list[DocsetInfo]] = {}
+    language_map: dict[str, list[DocsetInfo]] = defaultdict(list)
 
     for docset_type, extractor in extractors.items():
-        config = extractor.config
-
-        # Get the primary language(s) for this docset
-        primary_lang = config.get("primary_language")
-        if primary_lang is not None:
-            lang = primary_lang
-            if lang not in language_map:
-                language_map[lang] = []
-            language_map[lang].append(
-                {
-                    "docset": docset_type,
-                    "name": config["name"],
-                    "languages": list(config["languages"].keys()),
-                    "description": config.get("description"),
-                }
-            )
-        else:
-            # Infer from docset name or type
-            name = config["name"].lower()
-            if "javascript" in name or "js" in name:
-                lang = "JavaScript"
-            elif "typescript" in name:
-                lang = "TypeScript"
-            elif "python" in name:
-                lang = "Python"
-            elif "ruby" in name:
-                lang = "Ruby"
-            elif "java" in name and "javascript" not in name:
-                lang = "Java"
-            elif "bash" in name or "shell" in name:
-                lang = "Shell"
-            elif "sql" in name:
-                lang = "SQL"
-            elif name in ["c", "c++"]:
-                lang = name.upper()
-            elif "swift" in name or "apple" in name:
-                lang = "Swift"
-            elif "html" in name:
-                lang = "HTML"
-            elif "css" in name:
-                lang = "CSS"
-            elif "docker" in name:
-                lang = "Docker"
-            elif "react" in name:
-                lang = "React"
-            elif "vue" in name:
-                lang = "Vue"
-            else:
-                # Use the docset name as language
-                lang = config["name"]
-
-            if lang not in language_map:
-                language_map[lang] = []
-            language_map[lang].append(
-                {
-                    "docset": docset_type,
-                    "name": config["name"],
-                    "languages": (
-                        list(config["languages"].keys())
-                        if "languages" in config
-                        else []
-                    ),
-                    "description": config.get("description"),
-                }
-            )
+        lang = extractor.primary_language
+        language_map[lang].append(
+            {
+                "docset": docset_type,
+                "name": extractor.title,
+                "languages": extractor.language_names,
+                "description": extractor.description,
+            }
+        )
 
     # Format output
     lines = ["# Available Languages and Their Documentation\n"]
@@ -303,53 +238,25 @@ def list_docsets_by_language(language: str) -> str:
         )
 
     language_lower = language.lower()
-    matching_docsets: list[tuple[str, MatchedDocsetInfo]] = []
+    matching_docsets: list[tuple[str, DashExtractor, str]] = []
 
     for docset_type, extractor in extractors.items():
-        config = extractor.config
-        name_lower = config["name"].lower()
+        name_lower = extractor.title.lower()
 
         # Check various ways a docset might be related to the language
-        matches = False
         matched_lang = None
 
         # Direct name match
         if language_lower in name_lower:
-            matches = True
-            # Get the first available language variant
-            if "languages" in config:
-                matched_lang = next(iter(config["languages"].keys()))
-
-        # Check language variants
-        elif "languages" in config:
-            for lang_key in config["languages"].keys():
+            matched_lang = extractor.primary_language
+        else:
+            for lang_key in extractor.language_names:
                 if language_lower in lang_key.lower():
-                    matches = True
                     matched_lang = lang_key
                     break
 
-        # Special cases
-        elif language_lower in ["js", "javascript"] and (
-            "javascript" in name_lower or "js" in name_lower or "node" in name_lower
-        ):
-            matches = True
-        elif language_lower in ["ts", "typescript"] and "typescript" in name_lower:
-            matches = True
-        elif language_lower == "shell" and (
-            "bash" in name_lower or "shell" in name_lower
-        ):
-            matches = True
-        elif language_lower == "objective-c" and "apple" in name_lower:
-            matches = True
-        elif language_lower in ["swift", "swiftui"] and "apple" in name_lower:
-            matches = True
-
-        if matches:
-            matched_info: MatchedDocsetInfo = {
-                "config": config,
-                "matched_lang": matched_lang,
-            }
-            matching_docsets.append((docset_type, matched_info))
+        if matched_lang:
+            matching_docsets.append((docset_type, extractor, matched_lang))
 
     if not matching_docsets:
         return f"No docsets found for language '{language}'. Try 'list_languages' to see available options."
@@ -358,35 +265,20 @@ def list_docsets_by_language(language: str) -> str:
     lines = [f"# Docsets for {language.title()}\n"]
     lines.append("Use these with the `search_docs` tool:\n")
 
-    for docset_id, info in matching_docsets:
-        config = info["config"]
-        matched_lang = info["matched_lang"]
+    for docset_id, extractor, matched_lang in matching_docsets:
+        lines.append(f"## {extractor.title}")
 
-        lines.append(f"## {config['name']}")
-
-        if config.get("description"):
-            lines.append(f"*{config['description']}*\n")
+        if extractor.description:
+            lines.append(f"*{extractor.description}*")
 
         lines.append(f"- **Docset ID:** `{docset_id}`")
 
-        if "languages" in config:
-            lang_str = ", ".join(f"`{lang}`" for lang in config["languages"].keys())
-            lines.append(f"- **Languages:** {lang_str}")
+        if extractor.language_names:
+            lines.append(f"- **Languages:** {", ".join(extractor.language_names)}")
 
-        # Show the example with the matched language if available
-        if matched_lang:
-            lines.append(
-                f'- **Example:** `search_docs("YourQuery", docset="{docset_id}", language="{matched_lang}")`'
-            )
-        elif "languages" in config and config["languages"]:
-            default_lang = next(iter(config["languages"].keys()))
-            lines.append(
-                f'- **Example:** `search_docs("YourQuery", docset="{docset_id}", language="{default_lang}")`'
-            )
-        else:
-            lines.append(
-                f'- **Example:** `search_docs("YourQuery", docset="{docset_id}")`'
-            )
+        lines.append(
+            f'- **Example:** `search_docs("YourQuery", docset="{docset_id}", language="{matched_lang}")`'
+        )
 
         lines.append("")
 
@@ -415,7 +307,6 @@ def list_types(docset: str, language: str | None = None) -> str:
         return f"Error: docset '{docset}' not available. Available: {available}"
 
     extractor = extractors[docset]
-    config = extractor.config
 
     conn = connect_readonly(extractor.search_index_db)
     cursor = conn.cursor()
@@ -423,12 +314,12 @@ def list_types(docset: str, language: str | None = None) -> str:
     # Build language filter if specified
     lang_filter = ""
     if language:
-        if language not in config.get("languages", {}):
-            return f"Error: language '{language}' not available for {config['name']}. Available: {list(config.get('languages', {}).keys())}"
-        lang_filter = config["languages"][language]["filter"]
+        if language not in extractor.languages:
+            return f"Error: language '{language}' not available for {extractor.title}. Available: {extractor.language_names}"
+        lang_filter = extractor.languages[language]["filter"]
 
     # Get type counts and examples
-    lines = [f"# Documentation Types in {config['name']}"]
+    lines = [f"# Documentation Types in {extractor.title}"]
     if language:
         lines.append(f"*Filtered by language: {language}*\n")
     else:
@@ -447,18 +338,20 @@ def list_types(docset: str, language: str | None = None) -> str:
             (f"%{lang_filter}%",),
         )
     else:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT type, COUNT(*) as count
             FROM searchIndex
             GROUP BY type
             ORDER BY count DESC
-        """)
+        """
+        )
 
     type_counts = cursor.fetchall()
 
     if not type_counts:
         conn.close()
-        return f"No types found in {config['name']}" + (
+        return f"No types found in {extractor.title}" + (
             f" for language {language}" if language else ""
         )
 
@@ -542,7 +435,6 @@ def list_entries(
         return "Error: max_results must be between 1 and 200"
 
     extractor = extractors[docset]
-    config = extractor.config
 
     # Build query conditions
     conditions: list[str] = []
@@ -552,8 +444,8 @@ def list_entries(
         conditions.append("type = ?")
         params.append(type)
 
-    if language and language in config.get("languages", {}):
-        lang_filter = config["languages"][language]["filter"]
+    if language and language in extractor.languages:
+        lang_filter = extractor.languages[language]["filter"]
         conditions.append("path LIKE ?")
         params.append(f"%{lang_filter}%")
 
@@ -596,11 +488,11 @@ def list_entries(
         if contains:
             filters.append(f"contains={contains}")
         return (
-            f"No entries found in {config['name']} with filters: {', '.join(filters)}"
+            f"No entries found in {extractor.title} with filters: {', '.join(filters)}"
         )
 
     # Format output
-    lines = [f"# Documentation Entries in {config['name']}"]
+    lines = [f"# Documentation Entries in {extractor.title}"]
 
     # Show active filters
     if type or language or starts_with or contains:

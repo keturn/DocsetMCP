@@ -1,9 +1,14 @@
 from itertools import chain
+import json
+import logging
+import plistlib
+import re
 from textwrap import dedent
 from urllib.parse import urlsplit
 
 import bs4
 import html_to_markdown
+from typing import Optional
 
 from docsetmcp.common import AppleDocumentation, ContentItem, ProcessedDocsetConfig
 
@@ -18,41 +23,70 @@ import sqlite3
 import tarfile
 from pathlib import Path
 
-from docsetmcp.db_util import connect_readonly, escape_like_pattern
+from docsetmcp.config_loader import ConfigLoader
+from docsetmcp.db_util import connect_readonly, escape_like_pattern, make_unique
 from docsetmcp.server import DocsetMCPConfig
 
 
+logger = logging.getLogger(__name__)
+
+
 class DashExtractor:
-    config: ProcessedDocsetConfig
+    _config: ProcessedDocsetConfig
+    path: Path
+    identifiers: list[str]
+    titles: list[str]
+    description: Optional[str] = None
+    primary_language: str
 
     def __init__(self, path: Path):
-        # Load docset configuration using new config loader
-        from docsetmcp.config_loader import ConfigLoader
+        self.path: Path = path
 
-        self.docset = path
+        if not self.path.exists():
+            raise FileNotFoundError(f"Docset path not found: {self.path}")
+
+        resources = self.path / "Contents" / "Resources"
+        self.documents_path = resources / "Documents"
+        self.starting_document = "index.html"
 
         loader = ConfigLoader()
 
+        self.identifiers = []
+        self.titles = []
+
+        self._load_plist()
+        self._load_zeal_metadata()
+
         try:
-            self.config = loader.load_config(path.name.replace(".docset", ""))
+            self._config = loader.load_config(path.name.replace(".docset", ""))
+            self.titles.append(self._config["name"])
+            self.description = self._config.get("description")
         except FileNotFoundError:
             if auto_config := loader._generate_config_from_docset(path):  # type: ignore
-                self.config = auto_config
+                self._config = auto_config
             else:
                 raise RuntimeError(
                     f"Failed to load or auto-generate config for docset at {path}"
                 )
 
+        make_unique(self.identifiers)
+        make_unique(self.titles)
+
+        if not self.identifiers:
+            self.identifiers.append(path.stem)
+        if not self.titles:
+            self.titles.append(self.identifiers[0])
+
+        self.languages = self._config.get("languages", {})
+        self.primary_language = infer_primary_language(self._config)
+
         # Set up paths based on docset format
-        resources = self.docset / "Contents" / "Resources"
         if (resources / "optimizedIndex.dsidx").exists():
             self.search_index_db = resources / "optimizedIndex.dsidx"
         else:
             self.search_index_db = resources / "docSet.dsidx"
 
-        self.documents_path = resources / "Documents"
-
-        if self.config["format"] == "apple":
+        if self._config["format"] == "apple":
             self.fs_dir = resources / "Documents" / "fs"
             self.cache_db = resources / "cache.db"
             # Cache for decompressed fs files
@@ -65,12 +99,54 @@ class DashExtractor:
         else:
             self.tarix_archive = None
 
-        # Check if docset exists
-        if not self.docset.exists():
-            raise FileNotFoundError(
-                f"{self.config['name']} docset not found at {self.docset}. "
-                "Please ensure the docset is available at the configured location."
+    @property
+    def id(self) -> str:
+        return self.identifiers[0]
+
+    @property
+    def title(self) -> str:
+        return self.titles[0]
+
+    @property
+    def language_names(self) -> list[str]:
+        return list(self.languages.keys())
+
+    def _load_plist(self):
+        plist_path = self.path / "Contents" / "Info.plist"
+
+        try:
+            with plist_path.open("rb") as f:
+                plist_data = plistlib.load(f)
+        except FileNotFoundError:
+            logger.warning(
+                "Info.plist not found in %s. This is unusual.", plist_path.parent
             )
+            return
+
+        if bundle_id := plist_data.get("CFBundleIdentifier"):
+            self.identifiers.append(bundle_id)
+
+        if bundle_name := plist_data.get("CFBundleName"):
+            self.titles.append(bundle_name)
+
+        if index_file := plist_data.get("dashIndexFilePath"):
+            self.starting_document = index_file
+
+    def _load_zeal_metadata(self):
+        try:
+            with (self.path / "meta.json").open() as f:
+                metadata = json.load(f)
+        except FileNotFoundError:
+            if re.search("zeal", str(self.path), re.IGNORECASE):
+                logger.debug("Zeal meta.json not found in %s.", self.path.name)
+            else:
+                pass  # Not expected to be present on non-Zeal systems.
+            return
+
+        if name := metadata.get("name"):
+            self.identifiers.append(name)
+        if title := metadata.get("title"):
+            self.titles.append(title)
 
     def _search_index(self) -> tuple[sqlite3.Connection, sqlite3.Cursor]:
         """A read-only connection to the search index database."""
@@ -94,27 +170,29 @@ class DashExtractor:
 
     def _get_type_order_clause(self) -> str:
         """Generate SQL CASE clause for type ordering based on config"""
-        if "types" not in self.config or not self.config["types"]:
+        if "types" not in self._config or not self._config["types"]:
             return "0"  # No ordering if types not configured
 
         case_parts = ["CASE type"]
         # types is a dict mapping type_name -> priority_index
-        for type_name, priority in self.config["types"].items():
+        for type_name, priority in self._config["types"].items():
             case_parts.append(f"    WHEN '{type_name}' THEN {priority}")
-        case_parts.append(f"    ELSE {len(self.config['types'])}")
+        case_parts.append(f"    ELSE {len(self._config['types'])}")
         case_parts.append("END")
         return "\n".join(case_parts)
 
-    def search(self, query: str, language: str = "swift", max_results: int = 3) -> str:
+    def search(
+        self, query: str, language: Optional[str] = None, max_results: int = 3
+    ) -> str:
         """Search for Apple API documentation"""
         # Search the optimized index
         conn, cursor = self._search_index()
 
         # Filter by language using config
-        if language not in self.config["languages"]:
-            return f"Error: language must be one of {list(self.config['languages'].keys())}"
+        if language not in self._config["languages"]:
+            return f"Error: language must be one of {list(self._config['languages'].keys())}"
 
-        lang_config = self.config["languages"][language]
+        lang_config = self._config["languages"][language]
         lang_filter = lang_config["filter"]
 
         db_results = []
@@ -124,9 +202,9 @@ class DashExtractor:
         type_order = self._get_type_order_clause()
 
         # Get top-level types from configuration
-        if "types" in self.config and self.config["types"]:
+        if "types" in self._config and self._config["types"]:
             # Sort types by their priority value and take the first few
-            sorted_types = sorted(self.config["types"].items(), key=lambda x: x[1])
+            sorted_types = sorted(self._config["types"].items(), key=lambda x: x[1])
             top_types = [type_name for type_name, _ in sorted_types[:5]]
         else:
             # If no types configured, we can't filter by type
@@ -280,7 +358,7 @@ class DashExtractor:
         results: list[str] = []
         for row in db_results[:max_results]:
             name, doc_type, path, *_ = row
-            if self.config["format"] == "apple":
+            if self._config["format"] == "apple":
                 if "request_key=" in path:
                     request_key: str = path.split("request_key=")[1].split("#")[0]
                     # Remove any language parameter from request_key
@@ -407,14 +485,14 @@ class DashExtractor:
 Found but couldn't extract:
 {chr(10).join(entries_info)}
 
-Try opening Dash and ensuring the '{self.config['name']}' docset is fully downloaded."""
+Try opening Dash and ensuring the '{self._config['name']}' docset is fully downloaded."""
 
     def list_frameworks(self, filter_text: str | None = None) -> str:
         """List available frameworks/modules"""
         conn, cursor = self._search_index()
 
-        if self.config["format"] == "apple" and self.config.get("framework_pattern"):
-            framework_pattern = self.config["framework_pattern"]
+        if self._config["format"] == "apple" and self._config.get("framework_pattern"):
+            framework_pattern = self._config["framework_pattern"]
 
             if "documentation/" in framework_pattern:
                 query = """
@@ -494,7 +572,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
         suffix = base64.urlsafe_b64encode(truncated).decode().rstrip("=")
 
         # Language prefix from config
-        lang_config = self.config["languages"][language]
+        lang_config = self._config["languages"][language]
         prefix = lang_config["prefix"]
         uuid = prefix + suffix
 
@@ -697,7 +775,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
 
         # Build full docset path
         # Extract docset folder name from docset_path (e.g., "NodeJS/NodeJS.docset" -> "NodeJS.docset")
-        docset_folder = self.config["docset_path"].split("/")[-1]
+        docset_folder = self._config["docset_path"].split("/")[-1]
         full_path = f"{docset_folder}/Contents/Resources/Documents/{clean_path}"
 
         # Check cache first
@@ -766,7 +844,7 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
             """)]
         # fmt: on
 
-        lang = next(iter(self.config["languages"].keys()), "")
+        lang = next(iter(self._config["languages"].keys()), "")
         text_content = html_to_markdown.convert(
             html_content,
             html_to_markdown.ConversionOptions(
@@ -782,6 +860,17 @@ Try opening Dash and ensuring the '{self.config['name']}' docset is fully downlo
             lines.append(text_content)
 
         return "\n".join(lines)
+
+
+def infer_primary_language(config: ProcessedDocsetConfig) -> str:
+    if primary := config.get("primary_language"):
+        return primary
+    language_names = config.get("languages", {}).keys()
+    if language_names:
+        return next(iter(language_names))
+    # There was previously some code that attempted to infer language from the docset name,
+    # but it didn't seem very effective.
+    return config["name"]
 
 
 def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtractor]:
@@ -804,4 +893,4 @@ def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtracto
 
     extractors = [DashExtractor(d) for d in docset_locations]
 
-    return {e.config["name"]: e for e in extractors}
+    return {e.id: e for e in extractors}

@@ -3,22 +3,10 @@ Dash MCP Server - Extract documentation from Dash docsets as Markdown
 """
 
 import os
-from typing import TypedDict, Optional
 
 from fastmcp import FastMCP
+from fastmcp.server.lifespan import lifespan
 
-from docsetmcp.common import (
-    ProcessedDocsetConfig,
-)
-
-
-class MatchedDocsetInfo(TypedDict):
-    config: ProcessedDocsetConfig
-    matched_lang: Optional[str]
-
-
-# Create MCP server
-mcp = FastMCP("Dash")
 
 
 # Global configuration class to hold runtime settings
@@ -58,3 +46,15 @@ def initialize_extractors():
     extractors.update(initialize_docsets(docsetmcp_config))
 
     # TODO: cheatsheets
+
+
+@lifespan
+async def app_lifespan(_server: FastMCP):
+    initialize_extractors()
+    yield {
+        "extractors": extractors
+    }
+
+
+# Create MCP server
+mcp = FastMCP("Dash", lifespan=app_lifespan)

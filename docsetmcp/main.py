@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from fastmcp.server.providers import FileSystemProvider
+from starlette.routing import Mount
+
 from docsetmcp.server import (
     cheatsheet_extractors,
     docsetmcp_config,
@@ -8,11 +10,16 @@ from docsetmcp.server import (
     initialize_extractors,
     mcp,
 )
+from docsetmcp import web
 
 
 initialize_extractors()
 
 mcp.add_provider(FileSystemProvider(Path(__file__).parent))
+
+for (web_path, handler) in web.routes:
+    mcp.custom_route(web_path, ["GET", "HEAD"])(handler)
+
 
 def main():
     """Main entry point for the MCP server"""
@@ -95,10 +102,9 @@ def main():
         print("Available DocsetMCP docsets:")
         if extractors:
             for docset_id, extractor in sorted(extractors.items()):
-                config = extractor.config
-                languages = list(config.get("languages", {}).keys())
+                languages = list(extractor.language_names)
                 lang_str = ", ".join(languages) if languages else "no languages"
-                print(f"  {docset_id}: {config.get('name', docset_id)} ({lang_str})")
+                print(f"  {docset_id}: {extractor.title} ({lang_str})")
             print(f"\nTotal: {len(extractors)} docsets available")
         else:
             print("  No docsets found. Please install docsets in Dash.app first.")

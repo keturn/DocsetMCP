@@ -19,3 +19,13 @@ def escape_like_pattern(s: str, escape: str = "\x1b") -> str:
         .replace("%", escape + "%")
         .replace("_", escape + "_")
     )
+
+def make_unique[T](small_list: list[T]) -> list[T]:
+    """Make a list unique while preserving order.
+
+    Modifies the list in place.
+    """
+    for i in range(len(small_list) - 1, 1, -1):
+        if small_list[i] in small_list[:i]:
+            small_list.pop(i)
+    return small_list
