@@ -1,15 +1,20 @@
+from collections.abc import Awaitable, Callable
+
+from markupsafe import Markup
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response, HTMLResponse
+from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.staticfiles import StaticFiles
-from tdom import Node, html  # cspell: disable-line
+from tdom import html  # cspell: disable-line
 
-routes = []
+type RouteHandler = Callable[[Request], Awaitable[Response]]
+
+routes: list[tuple[str, RouteHandler]] = []
 
 
-def route(path: str):
+def route[T: RouteHandler](path: str) -> Callable[[T], T]:
     """Decorator to register a route handler for a specific path"""
 
-    def decorator[T](func: T) -> T:
+    def decorator(func: T) -> T:
         routes.append((path, func))
         return func
 
@@ -22,15 +27,15 @@ async def doc_listing(_request: Request) -> Response:
 
     docsets = docsetmcp.server.extractors.values()
     # fmt: off
-    body = html(t"""
+    body = Markup(html(t"""
         <h1>Available Documentation</h1>
         <ul>
             {[t'<li><a href="/docs/{docset.id}/">{docset.title}</a> {docset.description or ""}</li>' for docset in docsets]}
         </ul>
-    """)
+    """))
     # fmt: on
     page = html_doc(body, "Available Documentation")
-    return HTMLResponse(str(page))
+    return HTMLResponse(page)
 
 
 @route("/docs/{docset_id}/{path:path}")
@@ -50,7 +55,7 @@ async def doc_entry(request: Request) -> Response:
     return await fileserver.get_response(path, request.scope)
 
 
-def html_doc(body: Node, title: str) -> Node:
+def html_doc(body: Markup, title: str) -> str:
     return html(t"""
     <!doctype html>
     <html lang="en">
