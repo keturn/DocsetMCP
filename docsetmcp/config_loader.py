@@ -8,7 +8,7 @@ import sqlite3
 import os
 from pathlib import Path
 
-from .types import (
+from docsetmcp.common import (
     LanguageConfig,
     DocsetConfig,
     ProcessedDocsetConfig,
@@ -35,6 +35,7 @@ class ConfigLoader:
 
     def load_config(self, docset_name: str) -> ProcessedDocsetConfig:
         """Load a single docset configuration with defaults applied"""
+        docset_name = docset_name.lower().replace(".", "").replace("-", "_")
         config_file = self.config_dir / f"{docset_name}.yaml"
 
         if not config_file.exists():
@@ -69,9 +70,7 @@ class ConfigLoader:
 
         return configs
 
-    def _discover_docsets(
-        self, search_paths: list[str]
-    ) -> dict[str, ProcessedDocsetConfig]:
+    def _discover_docsets(self, search_paths: list[str]) -> dict[str, ProcessedDocsetConfig]:
         """Discover and auto-configure docsets in the given paths"""
         discovered: dict[str, ProcessedDocsetConfig] = {}
 
@@ -82,9 +81,7 @@ class ConfigLoader:
 
             # Look for .docset directories
             for docset_path in path.glob("*.docset"):
-                docset_name = (
-                    docset_path.stem.lower().replace(".", "").replace("-", "_")
-                )
+                docset_name = docset_path.stem.lower().replace(".", "").replace("-", "_")
 
                 # Skip if we already found this docset
                 if docset_name in discovered:
@@ -99,9 +96,7 @@ class ConfigLoader:
 
         return discovered
 
-    def _generate_config_from_docset(
-        self, docset_path: Path
-    ) -> ProcessedDocsetConfig | None:
+    def _generate_config_from_docset(self, docset_path: Path) -> ProcessedDocsetConfig | None:
         """Generate a configuration by analyzing a docset"""
         # Check if it's a valid docset structure
         resources = docset_path / "Contents" / "Resources"
@@ -130,9 +125,7 @@ class ConfigLoader:
             "name": name,
             "docset_path": docset_path.name,
             "description": f"Auto-detected {name} documentation",
-            "languages": docset_info.get(
-                "languages", ["javascript"]
-            ),  # Default fallback
+            "languages": docset_info.get("languages", ["javascript"]),  # Default fallback
             "types": docset_info.get("types", []),
         }
 
@@ -147,9 +140,7 @@ class ConfigLoader:
             cursor = conn.cursor()
 
             # Get distinct types
-            cursor.execute(
-                "SELECT DISTINCT type FROM searchIndex WHERE type IS NOT NULL"
-            )
+            cursor.execute("SELECT DISTINCT type FROM searchIndex WHERE type IS NOT NULL")
             types = [row[0] for row in cursor.fetchall()]
             info["types"] = types
 
@@ -196,18 +187,11 @@ class ConfigLoader:
                     languages.add("python")
 
                 # Other common languages
-                if any(
-                    pattern in name_lower for pattern in ["java", "spring", "android"]
-                ):
+                if any(pattern in name_lower for pattern in ["java", "spring", "android"]):
                     languages.add("java")
-                if any(
-                    pattern in name_lower
-                    for pattern in ["swift", "ios", "macos", "cocoa"]
-                ):
+                if any(pattern in name_lower for pattern in ["swift", "ios", "macos", "cocoa"]):
                     languages.add("swift")
-                if any(
-                    pattern in name_lower for pattern in ["php", "laravel", "symfony"]
-                ):
+                if any(pattern in name_lower for pattern in ["php", "laravel", "symfony"]):
                     languages.add("php")
 
             # Default to common web languages if nothing detected

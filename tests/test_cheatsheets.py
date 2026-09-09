@@ -9,12 +9,13 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
+from docsetmcp.cheatsheet_tools import search_cheatsheet
+
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from docsetmcp.server import (
-    CheatsheetExtractor,
-    search_cheatsheet,
+from docsetmcp.cheatsheet_extractor import CheatsheetExtractor
+from docsetmcp.cheatsheet_tools import (
     list_available_cheatsheets,
 )
 import docsetmcp.server
@@ -25,9 +26,7 @@ class TestCheatsheetExtractor:
 
     @patch("docsetmcp.server.Path")
     @patch("os.path.expanduser")
-    def test_init_success(
-        self, mock_expanduser: MagicMock, mock_path_class: MagicMock
-    ) -> None:
+    def test_init_success(self, mock_expanduser: MagicMock, mock_path_class: MagicMock) -> None:
         """Test successful initialization"""
         mock_expanduser.return_value = "/mock/path"
 
@@ -159,9 +158,7 @@ class TestCheatsheetExtractor:
 
     @patch("builtins.open", create=True)
     @patch("pathlib.Path.exists")
-    def test_extract_entry_content(
-        self, mock_exists: MagicMock, mock_open: MagicMock
-    ) -> None:
+    def test_extract_entry_content(self, mock_exists: MagicMock, mock_open: MagicMock) -> None:
         """Test extracting content from HTML"""
         mock_exists.return_value = True
 

@@ -1,6 +1,0 @@
-"""Type stubs for yaml"""
-
-from typing import Any, IO, Union
-
-def safe_load(stream: Union[str, bytes, IO[Any]]) -> Any: ...
-def dump(data: Any, stream: IO[Any] | None = None, **kwds: Any) -> str | None: ...

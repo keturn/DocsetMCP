@@ -1,12 +1,9 @@
-# DocsetMCP
-
-[![PyPI](https://img.shields.io/pypi/v/docsetmcp)](https://pypi.org/project/docsetmcp/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/pypi/pyversions/docsetmcp)](https://pypi.org/project/docsetmcp/)
+# ZDocsetMCP
 
 **Access your local Dash documentation directly from AI assistants** 🚀
 
-DocsetMCP is a Model Context Protocol (MCP) server that seamlessly integrates your local Dash docsets with AI assistants like Claude, enabling instant access to offline documentation without leaving your conversation.
+ZDocsetMCP is a Model Context Protocol (MCP) server that seamlessly integrates your local Dash docsets with AI
+assistants like Claude, enabling instant access to offline documentation without leaving your conversation.
 
 ## 📋 Table of Contents
 
@@ -121,7 +118,6 @@ Use `list_available_docsets` to see all docsets installed on your system.
 
 ## Prerequisites
 
-- macOS (Dash is Mac-only)
 - [Dash](https://kapeli.com/dash) with desired docsets downloaded
 - Python 3.10 or higher
 - UV package manager ([How to Install](https://docs.astral.sh/uv/getting-started/installation/))
@@ -144,7 +140,7 @@ You can customize these locations using:
 # Set custom docset directory
 export DOCSET_PATH="/path/to/your/docsets"
 
-# Set custom cheatsheet directory  
+# Set custom cheatsheet directory
 export CHEATSHEET_PATH="/path/to/your/cheatsheets"
 
 # Run with custom paths
@@ -171,7 +167,7 @@ docsetmcp --additional-cheatsheet-paths "/extra/cheatsheets" "/more/cheatsheets"
 **Priority Order:**
 
 1. CLI arguments (highest priority)
-2. Environment variables  
+2. Environment variables
 3. Default Dash locations (lowest priority)
 
 **Additional Search Paths:**
@@ -267,7 +263,7 @@ If your MCP client supports `uvx`, no installation is needed! The package will b
 If you prefer to install locally or your MCP client doesn't support `uvx`:
 
 ```bash
-pip install docsetmcp
+uv tool install docsetmcp
 ```
 
 Then use `docsetmcp` instead of `uvx docsetmcp` in your configuration.
@@ -279,15 +275,12 @@ Then use `docsetmcp` instead of `uvx docsetmcp` in your configuration.
    ```bash
    git clone https://github.com/codybrom/docsetmcp.git
    cd docsetmcp
-   pip install -e .
+   uv sync --all-extras
    ```
 
 2. **Run tests** (optional):
 
    ```bash
-   # Install test dependencies
-   pip install pytest pytest-cov pytest-xdist
-
    # Run basic tests
    pytest tests/test_docsets.py::TestDocsets::test_yaml_structure -v
 
@@ -554,14 +547,11 @@ This means the docset isn't installed in Dash. To fix:
 git clone https://github.com/codybrom/docsetmcp.git
 cd docsetmcp
 
-# Install in development mode
-pip install -e .
-
-# Install all development dependencies
-pip install -r requirements.txt
+# Create venv and install project + dev dependencies
+uv sync --all-extras
 
 # Set up pre-commit hooks
-pre-commit install
+uv run pre-commit install
 ```
 
 ### Testing
@@ -625,10 +615,7 @@ docsetmcp --docset-path "/custom/path" --list-docsets
 
 ```bash
 # Build package
-python setup.py sdist bdist_wheel
-
-# Install from source
-pip install .
+uv build
 ```
 
 ## Architecture
@@ -716,5 +703,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 - Thanks to [Kapeli](https://kapeli.com/) for creating Dash
+- and to [Cody Brom](https://github.com/codybrom/) for the original macOS version of [DocsetMCP](https://github.com/codybrom/DocsetMCP).
 - Built on the [Model Context Protocol](https://modelcontextprotocol.io/) standard
 - Inspired by the MCP community and ecosystem

@@ -7,9 +7,8 @@ import os
 import sqlite3
 from pathlib import Path
 
-
 # Import the actual config type from shared types
-from docsetmcp.types import ProcessedDocsetConfig
+from docsetmcp.common import ProcessedDocsetConfig
 
 
 class TestDashExtractor:
@@ -20,12 +19,8 @@ class TestDashExtractor:
         self.config = config
 
         # Default Dash docset location on macOS
-        dash_docsets_path = os.path.expanduser(
-            "~/Library/Application Support/Dash/DocSets"
-        )
-        self.docset = (
-            Path(dash_docsets_path) / docset_folder / self.config["docset_path"]
-        )
+        dash_docsets_path = os.path.expanduser("~/Library/Application Support/Dash/DocSets")
+        self.docset = Path(dash_docsets_path) / docset_folder / self.config["docset_path"]
 
         # Set up paths based on docset format
         if self.config["format"] == "apple":

@@ -1,3 +1,6 @@
+# Local Configs
+/.env
+
 # Virtual environments
 .venv/
 
