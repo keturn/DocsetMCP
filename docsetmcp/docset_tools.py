@@ -1,14 +1,14 @@
 from collections import defaultdict
-from typing import Union
+from textwrap import dedent
 
 from fastmcp.tools.function_tool import (
     tool,
 )  # https://github.com/PrefectHQ/fastmcp/issues/3530
 
+from docsetmcp.common import DocsetInfo
 from docsetmcp.dash_extractor import DashExtractor
 from docsetmcp.db_util import connect_readonly
 from docsetmcp.server import extractors
-from docsetmcp.common import DocsetInfo
 
 
 @tool()
@@ -109,13 +109,13 @@ def list_available_docsets() -> str:
 
 
 @tool()
-def list_frameworks(docset: str, filter: str | None = None) -> str:
+def list_frameworks(docset: str, framework: str | None = None) -> str:
     """
     List available frameworks/types in a specific docset.
 
     Args:
         docset: Docset to list from (e.g., 'nodejs', 'python_3', 'bash')
-        filter: Optional filter for framework/type names
+        framework: Optional filter for framework/type names
 
     Returns:
         List of available frameworks or types
@@ -124,7 +124,7 @@ def list_frameworks(docset: str, filter: str | None = None) -> str:
         available = list(extractors.keys())
         return f"Error: docset '{docset}' not available. Available: {available}"
 
-    return extractors[docset].list_frameworks(filter)
+    return extractors[docset].list_frameworks(framework)
 
 
 @tool()
@@ -248,10 +248,11 @@ def list_docsets_by_language(language: str) -> str:
     # fmt: off
     lines = [dedent(f"""\
         # Docsets for {language.title()}
-    
+
         Use these with the `search_docs` tool:
         """)
-    ] # fmt: on
+    ]
+    # fmt: on
 
     for docset_id, extractor, matched_lang in matching_docsets:
         lines.append(f"## {extractor.title}")
@@ -392,7 +393,7 @@ def list_types(docset: str, language: str | None = None) -> str:
 @tool()
 def list_entries(
     docset: str,
-    type: str | None = None,
+    subject_type: str | None = None,
     language: str | None = None,
     starts_with: str | None = None,
     contains: str | None = None,
@@ -406,7 +407,7 @@ def list_entries(
 
     Args:
         docset: Docset identifier (e.g., 'apple_api_reference', 'nodejs')
-        type: Filter by documentation type (e.g., 'Class', 'Method', 'Function')
+        subject_type: Filter by documentation type (e.g., 'Class', 'Method', 'Function')
         language: Filter by language (e.g., 'swift', 'objc')
         starts_with: Filter entries starting with this prefix (e.g., 'UI', 'NS')
         contains: Filter entries containing this substring
@@ -426,11 +427,11 @@ def list_entries(
 
     # Build query conditions
     conditions: list[str] = []
-    params: list[Union[str, int]] = []
+    params: list[str | int] = []
 
-    if type:
+    if subject_type:
         conditions.append("type = ?")
-        params.append(type)
+        params.append(subject_type)
 
     if language and language in extractor.languages:
         lang_filter = extractor.languages[language]["filter"]
@@ -467,8 +468,8 @@ def list_entries(
 
     if not results:
         filters: list[str] = []
-        if type:
-            filters.append(f"type={type}")
+        if subject_type:
+            filters.append(f"type={subject_type}")
         if language:
             filters.append(f"language={language}")
         if starts_with:
@@ -481,10 +482,10 @@ def list_entries(
     lines = [f"# Documentation Entries in {extractor.title}"]
 
     # Show active filters
-    if type or language or starts_with or contains:
+    if subject_type or language or starts_with or contains:
         lines.append("\nActive filters:")
-        if type:
-            lines.append(f"- Type: {type}")
+        if subject_type:
+            lines.append(f"- Type: {subject_type}")
         if language:
             lines.append(f"- Language: {language}")
         if starts_with:
@@ -494,7 +495,7 @@ def list_entries(
         lines.append("")
 
     # Group by type if not filtering by type
-    if not type:
+    if not subject_type:
         from collections import defaultdict
 
         by_type: defaultdict[str, list[str]] = defaultdict(list)
@@ -510,7 +511,7 @@ def list_entries(
             lines.append("")
     else:
         # Just list all entries
-        lines.append(f"## {type} entries ({len(results)})\n")
+        lines.append(f"## {subject_type} entries ({len(results)})\n")
         for name, _ in results:
             lines.append(f"- `{name}`")
 
