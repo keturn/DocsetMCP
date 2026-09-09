@@ -12,6 +12,9 @@ license-files = ["LICENSE"]
 authors = [
     { name = "Cody Bromley", email = "dev@codybrom.com" },
 ]
+maintainers = [
+    { name = "Kevin Turner" }
+]
 keywords = ["mcp", "model-context-protocol", "dash", "zeal", "documentation", "llm", "docset"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -48,9 +51,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/codybrom/docsetmcp"
-"Bug Reports" = "https://github.com/codybrom/docsetmcp/issues"
-Source = "https://github.com/codybrom/docsetmcp"
+Homepage = "https://github.com/keturn/ZDocsetMCP"
+"Bug Reports" = "https://github.com/keturn/ZDocsetMCP/issues"
+Source = "https://github.com/keturn/ZDocsetMCP"
 
 [project.scripts]
 docsetmcp = "docsetmcp.main:main"

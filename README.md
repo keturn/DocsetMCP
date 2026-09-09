@@ -1,12 +1,9 @@
-# DocsetMCP
-
-[![PyPI](https://img.shields.io/pypi/v/docsetmcp)](https://pypi.org/project/docsetmcp/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/pypi/pyversions/docsetmcp)](https://pypi.org/project/docsetmcp/)
+# ZDocsetMCP
 
 **Access your local Dash documentation directly from AI assistants** 🚀
 
-DocsetMCP is a Model Context Protocol (MCP) server that seamlessly integrates your local Dash docsets with AI assistants like Claude, enabling instant access to offline documentation without leaving your conversation.
+ZDocsetMCP is a Model Context Protocol (MCP) server that seamlessly integrates your local Dash docsets with AI
+assistants like Claude, enabling instant access to offline documentation without leaving your conversation.
 
 ## 📋 Table of Contents
 
@@ -121,7 +118,6 @@ Use `list_available_docsets` to see all docsets installed on your system.
 
 ## Prerequisites
 
-- macOS (Dash is Mac-only)
 - [Dash](https://kapeli.com/dash) with desired docsets downloaded
 - Python 3.10 or higher
 - UV package manager ([How to Install](https://docs.astral.sh/uv/getting-started/installation/))
@@ -707,5 +703,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 - Thanks to [Kapeli](https://kapeli.com/) for creating Dash
+- and to [Cody Brom](https://github.com/codybrom/) for the original macOS version of [DocsetMCP](https://github.com/codybrom/DocsetMCP).
 - Built on the [Model Context Protocol](https://modelcontextprotocol.io/) standard
 - Inspired by the MCP community and ecosystem
