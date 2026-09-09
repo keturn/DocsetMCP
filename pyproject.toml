@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.10.9,<0.11.0"]
+requires = ["uv_build>=0.12.12,<0.13"]
 build-backend = "uv_build"
 
 [project]
@@ -27,8 +27,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "mcp>=1.9.4",
-    "Brotli>=1.1.0",
+    "brotli>=1.1.0",
     "PyYAML>=6.0",
     "fastmcp>=3.1.1",
     "beautifulsoup4>=4.14.3",
