@@ -1,8 +1,10 @@
+import argparse
+import sys
 from pathlib import Path
 
 from fastmcp.server.providers import FileSystemProvider
-from starlette.routing import Mount
 
+from docsetmcp import web
 from docsetmcp.server import (
     cheatsheet_extractors,
     docsetmcp_config,
@@ -10,8 +12,6 @@ from docsetmcp.server import (
     initialize_extractors,
     mcp,
 )
-from docsetmcp import web
-
 
 initialize_extractors()
 
@@ -23,8 +23,6 @@ for web_path, handler in web.routes:
 
 def main():
     """Main entry point for the MCP server"""
-    import sys
-    import argparse
 
     try:
         from . import __version__
@@ -118,7 +116,7 @@ def main():
             print("✓ MCP server initialized successfully")
             print("\nStarting MCP server (use Ctrl+C to stop)...")
             # Fall through to normal MCP mode for a few seconds to test
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"✗ Error initializing MCP server: {e}")
             sys.exit(1)
 
