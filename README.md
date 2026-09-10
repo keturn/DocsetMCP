@@ -582,7 +582,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-ZDocsetMCP is derived from [DocsetMCP](https://github.com/codybrom/DocsetMCP) by [Cody Brom](https://github.com/codybrom/).
+ZDocsetMCP is derived from [DocsetMCP](https://github.com/codybrom/DocsetMCP) by [Cody Bromley](https://github.com/codybrom/).
 
 Thanks to [Kapeli](https://kapeli.com/) for creating Dash,
 and to [Oleg Shparber](https://github.com/trollixx) and team for [Zeal](https://zealdocs.org/).
