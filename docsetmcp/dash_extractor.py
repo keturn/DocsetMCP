@@ -744,57 +744,71 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
             if len(parts) > 1:
                 clean_path = parts[-1]  # Get the actual file path after the last >
 
-        # Build full docset path
-        # Extract docset folder name from docset_path (e.g., "NodeJS/NodeJS.docset" -> "NodeJS.docset")
-        docset_folder = self._config["docset_path"].split("/")[-1]
-        full_path = f"{docset_folder}/Contents/Resources/Documents/{clean_path}"
-
         # Check cache first
-        if full_path in self.html_cache:
-            return self.html_cache[full_path]
+        if clean_path in self.html_cache:
+            return self.html_cache[clean_path]
 
         try:
-            # Query tarix index for file location
-            conn = connect_readonly(self.tarix_index)
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT hash FROM tarindex WHERE path = ?", (full_path,))
-            result = cursor.fetchone()
-            conn.close()
-
-            if not result:
-                return None
-
-            # Validate hash format: "entry_number offset size"
-            hash_parts = result[0].split()
-            if len(hash_parts) != 3:
-                return None
-
-            # Extract file from tar archive
-            with tarfile.open(self.tarix_archive, "r:gz") as tar:
-                # Find the file by path name (entry_number doesn't seem to be sequential index)
-                try:
-                    target_member = tar.getmember(full_path)
-                    extracted_file = tar.extractfile(target_member)
-                    if extracted_file:
-                        content = extracted_file.read().decode("utf-8", errors="ignore")
-                        self.html_cache[full_path] = content
-                        return content
-                except KeyError:
-                    # If exact path fails, try to find by name
-                    target_file = full_path.split("/")[-1]  # Get just the filename
-                    for member in tar.getmembers():
-                        if member.name.endswith(target_file) and clean_path in member.name:
-                            extracted_file = tar.extractfile(member)
-                            if extracted_file:
-                                content = extracted_file.read().decode("utf-8", errors="ignore")
-                                self.html_cache[full_path] = content
-                                return content
+            raw_file = self._extract_raw_from_tarix(search_path)
+            if raw_file is not None:
+                content = raw_file.decode("utf-8", errors="ignore")
+                self.html_cache[clean_path] = content
+                return content
 
         except FileNotFoundError:
             pass
 
         return None
+
+    def _extract_raw_from_tarix(self, search_path: str) -> bytes | None:
+        # Remove anchor from path
+        clean_path = search_path.split("#")[0]
+
+        # Handle special Dash metadata paths (like in C docset)
+        if clean_path.startswith("<dash_entry_"):
+            # Extract the actual file path from the end of the path
+            # Format: <dash_entry_...>actual/file/path.html
+            parts = clean_path.split(">")
+            if len(parts) > 1:
+                clean_path = parts[-1]  # Get the actual file path after the last >
+
+        # Build full docset path
+        # Extract docset folder name from docset_path (e.g., "NodeJS/NodeJS.docset" -> "NodeJS.docset")
+        docset_folder = self._config["docset_path"].split("/")[-1]
+        full_path = f"{docset_folder}/Contents/Resources/Documents/{clean_path}"
+
+        # TODO: optimize with tarixIndex.db
+        # Query tarix index for file location
+        # conn = connect_readonly(self.tarix_index)
+        # cursor = conn.cursor()
+        #
+        # cursor.execute("SELECT hash FROM tarindex WHERE path = ?", (full_path,))
+        # result = cursor.fetchone()
+        # conn.close()
+        #
+        # if not result:
+        #     return None
+        #
+        # # Validate hash format: "entry_number offset size"
+        # hash_parts = result[0].split()
+        # if len(hash_parts) != 3:
+        #     return None
+        with tarfile.open(self.tarix_archive, "r:gz") as tar:
+            # Find the file by path name (entry_number doesn't seem to be sequential index)
+            try:
+                target_member = tar.getmember(full_path)
+                if (reader := tar.extractfile(target_member)) is not None:
+                    return reader.read()
+            except KeyError:
+                # If exact path fails, try to find by name
+                target_file = full_path.split("/")[-1]  # Get just the filename
+                for member in tar.getmembers():
+                    if (
+                        member.name.endswith(target_file)
+                        and clean_path in member.name
+                        and (reader := tar.extractfile(target_member)) is not None
+                    ):
+                        return reader.read()
 
     def _format_html_as_markdown(
         self, html_content: str, name: str, doc_type: str, path: str

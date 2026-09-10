@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from mimetypes import guess_type
 
 from markupsafe import Markup
 from starlette.requests import Request
@@ -51,8 +52,15 @@ async def doc_entry(request: Request) -> Response:
     if path == "":
         return RedirectResponse(request.scope["path"] + extractor.starting_document)
 
-    fileserver = StaticFiles(directory=extractor.documents_path, html=True)
-    return await fileserver.get_response(path, request.scope)
+    if extractor.documents_path.exists():
+        fileserver = StaticFiles(directory=extractor.documents_path, html=True)
+        return await fileserver.get_response(path, request.scope)
+    elif extractor.tarix_archive.exists():
+        content = extractor._extract_raw_from_tarix(path)
+        if content is None:
+            return Response(status_code=404)
+        else:
+            return Response(content=content, media_type=guess_type(path)[0])
 
 
 def html_doc(body: Markup, title: str) -> str:
