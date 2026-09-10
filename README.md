@@ -408,23 +408,23 @@ DocsetMCP provides eleven powerful tools for accessing your documentation:
 
 Search and extract documentation from any docset.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `query` | string | **Exact name** to search (not keywords) | *required* |
-| `docset` | string | Target docset (e.g., 'nodejs', 'python_3') | *required* |
-| `language` | string | Programming language filter | docset default |
-| `max_results` | int | Number of results (1-10) | 3 |
+| Parameter     | Type   | Description                                | Default        |
+|---------------|--------|--------------------------------------------|----------------|
+| `query`       | string | **Exact name** to search (not keywords)    | *required*     |
+| `docset`      | string | Target docset (e.g., 'nodejs', 'python_3') | *required*     |
+| `language`    | string | Programming language filter                | docset default |
+| `max_results` | int    | Number of results (1-10)                   | 3              |
 
 ### 📋 `search_cheatsheet`
 
 Search Dash cheatsheets for quick command reference.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `cheatsheet` | string | Cheatsheet name (e.g., 'git', 'vim') | *required* |
-| `query` | string | Search within cheatsheet | - |
-| `category` | string | Filter by category | - |
-| `max_results` | int | Number of results (1-50) | 10 |
+| Parameter     | Type   | Description                          | Default    |
+|---------------|--------|--------------------------------------|------------|
+| `cheatsheet`  | string | Cheatsheet name (e.g., 'git', 'vim') | *required* |
+| `query`       | string | Search within cheatsheet             | -          |
+| `category`    | string | Filter by category                   | -          |
+| `max_results` | int    | Number of results (1-50)             | 10         |
 
 ### 📚 `list_available_docsets`
 
@@ -438,10 +438,10 @@ List all available Dash cheatsheets that can be searched.
 
 List frameworks/types within a specific docset.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `docset` | string | Target docset | *required* |
-| `filter` | string | Filter framework names | - |
+| Parameter | Type   | Description            | Default    |
+|-----------|--------|------------------------|------------|
+| `docset`  | string | Target docset          | *required* |
+| `filter`  | string | Filter framework names | -          |
 
 ### 🌍 `list_languages`
 
@@ -451,45 +451,45 @@ Discover all programming languages with available documentation.
 
 Find all docsets that support a specific programming language.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
+| Parameter  | Type   | Description          | Default    |
+|------------|--------|----------------------|------------|
 | `language` | string | Programming language | *required* |
 
 ### 🏷️ `list_types`
 
 List all available types (Class, Protocol, Function, etc.) in a docset/language.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `docset` | string | Target docset | *required* |
-| `language` | string | Programming language filter | - |
+| Parameter  | Type   | Description                 | Default    |
+|------------|--------|-----------------------------|------------|
+| `docset`   | string | Target docset               | *required* |
+| `language` | string | Programming language filter | -          |
 
 ### 📋 `list_entries`
 
 List entries filtered by type and optional name prefix.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `docset` | string | Target docset | *required* |
-| `type_name` | string | Type to filter by (e.g., 'Class', 'Protocol') | *required* |
-| `language` | string | Programming language filter | - |
-| `name_filter` | string | Filter entries by name prefix | - |
-| `max_results` | int | Number of results (1-100) | 20 |
+| Parameter     | Type   | Description                                   | Default    |
+|---------------|--------|-----------------------------------------------|------------|
+| `docset`      | string | Target docset                                 | *required* |
+| `type_name`   | string | Type to filter by (e.g., 'Class', 'Protocol') | *required* |
+| `language`    | string | Programming language filter                   | -          |
+| `name_filter` | string | Filter entries by name prefix                 | -          |
+| `max_results` | int    | Number of results (1-100)                     | 20         |
 
 ### 📂 `list_cheatsheet_categories`
 
 List all categories within a specific cheatsheet.
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
+| Parameter    | Type   | Description     | Default    |
+|--------------|--------|-----------------|------------|
 | `cheatsheet` | string | Cheatsheet name | *required* |
 
 ### 📄 `fetch_cheatsheet`
 
 Fetch entire cheatsheet content (recommended for comprehensive access).
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
+| Parameter    | Type   | Description     | Default    |
+|--------------|--------|-----------------|------------|
 | `cheatsheet` | string | Cheatsheet name | *required* |
 
 ## Troubleshooting
