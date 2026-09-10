@@ -675,9 +675,9 @@ We welcome contributions! Here's how you can help:
 
 ### Reporting Issues
 
-- 🐛 [Bug Reports](https://github.com/codybrom/docsetmcp/issues/new?labels=bug)
-- 💡 [Feature Requests](https://github.com/codybrom/docsetmcp/issues/new?labels=enhancement)
-- 📚 [Documentation Issues](https://github.com/codybrom/docsetmcp/issues/new?labels=documentation)
+- 🐛 [Bug Reports](https://github.com/keturn/ZDocsetMCP/issues/new?labels=bug)
+- 💡 [Feature Requests](https://github.com/keturn/ZDocsetMCP/issues/new?labels=enhancement)
+- 📚 [Documentation Issues](https://github.com/keturn/ZDocsetMCP/issues/new?labels=documentation)
 
 ### Development Guidelines
 
