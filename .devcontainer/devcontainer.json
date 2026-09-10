@@ -1,34 +1,36 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "Python 3",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie",
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	"features": {
-		"ghcr.io/devcontainers-extra/features/uv:1": {},
-		// node for the cspell precommit hook
-		"ghcr.io/devcontainers/features/node:1": {}
-	},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "uv sync --all-extras && uv run pre-commit install",
-	"containerEnv": {
-		"UV_LINK_MODE": "copy"
-	},
-	"portsAttributes": {
-		"6274": {
-			"label": "MCP Inspector"
-		},
-		"6277": {
-			"label": "MCP Inspector Proxy",
-			"onAutoForward": "silent"
-		},
-		"8000": {
-			"label": "DocsetMCP Server"
-		}
-	}
-	// Configure tool-specific properties.
-	// "customizations": {}
+  "name": "Python 3",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie",
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/devcontainers-extra/features/uv:1": {},
+    // node for the cspell precommit hook
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "uv sync --all-extras && uv run pre-commit install",
+  "containerEnv": {
+    "UV_LINK_MODE": "copy"
+  },
+  "portsAttributes": {
+    "6274": {
+      "label": "MCP Inspector"
+    },
+    "6277": {
+      "label": "MCP Inspector Proxy",
+      "onAutoForward": "silent"
+    },
+    "8000": {
+      "label": "DocsetMCP Server"
+    }
+  }
+  // for JetBrains + podman clash
+  // runArgs: ["--userns=keep-id"]
+  // Configure tool-specific properties.
+  // "customizations": {}
 }
