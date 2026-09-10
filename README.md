@@ -512,8 +512,8 @@ This means the docset isn't installed in Dash. To fix:
 1. **Check installation**: Run `pip show docsetmcp` to verify installation
 2. **Test manually**: Run `uvx docsetmcp` in terminal - you should see MCP output
 3. **Check logs**:
-   - Claude Desktop: Check Console.app for Claude logs
-   - Cursor: Check Output → MCP panel
+    - Claude Desktop: Check Console.app for Claude logs
+    - Cursor: Check Output → MCP panel
 4. **Verify config path**: Ensure config file is in the correct location
 
 </details>
@@ -623,17 +623,17 @@ uv build
 ### Core Components
 
 - **docsetmcp/server.py**: Main MCP server implementation using FastMCP. Contains the DashExtractor class that handles:
-  - Apple cache format (SHA-1 UUID-based with brotli compression)
-  - Tarix format (tar.gz archives)
-  - SQLite database queries for documentation lookup
-  - HTML to Markdown conversion
+    - Apple cache format (SHA-1 UUID-based with brotli compression)
+    - Tarix format (tar.gz archives)
+    - SQLite database queries for documentation lookup
+    - HTML to Markdown conversion
 
 - **docsetmcp/config_loader.py**: Configuration system that loads YAML configs for 165+ supported docsets. Provides smart defaults and handles both simple and complex configuration formats.
 
 - **docsetmcp/docsets/**: YAML configuration files for each supported docset, defining:
-  - Docset paths and formats
-  - Language variants and filters
-  - Type priorities for search results
+    - Docset paths and formats
+    - Language variants and filters
+    - Type priorities for search results
 
 ### Key Implementation Details
 
