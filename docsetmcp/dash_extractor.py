@@ -1,32 +1,26 @@
-from itertools import chain
+import base64
+import hashlib
 import json
 import logging
+import os
 import plistlib
 import re
+import sqlite3
+import tarfile
+from itertools import chain
+from pathlib import Path
+from plistlib import InvalidFileException
 from textwrap import dedent
 from urllib.parse import urlsplit
 
+import brotli
 import bs4
 import html_to_markdown
-from typing import Optional
 
 from docsetmcp.common import AppleDocumentation, ContentItem, ProcessedDocsetConfig
-
-
-import brotli
-
-
-import base64
-import hashlib
-import os
-import sqlite3
-import tarfile
-from pathlib import Path
-
 from docsetmcp.config_loader import ConfigLoader
 from docsetmcp.db_util import connect_readonly, escape_like_pattern, make_unique
 from docsetmcp.server import DocsetMCPConfig
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +30,7 @@ class DashExtractor:
     path: Path
     identifiers: list[str]
     titles: list[str]
-    description: Optional[str] = None
+    description: str | None = None
     primary_language: str
 
     def __init__(self, path: Path):
@@ -118,6 +112,9 @@ class DashExtractor:
         except FileNotFoundError:
             logger.warning("Info.plist not found in %s. This is unusual.", plist_path.parent)
             return
+        except InvalidFileException:
+            logger.warning("Invalid plist file at %s", plist_path)
+            return
 
         if bundle_id := plist_data.get("CFBundleIdentifier"):
             self.identifiers.append(bundle_id)
@@ -177,7 +174,7 @@ class DashExtractor:
         case_parts.append("END")
         return "\n".join(case_parts)
 
-    def search(self, query: str, language: Optional[str] = None, max_results: int = 3) -> str:
+    def search(self, query: str, language: str | None = None, max_results: int = 3) -> str:
         """Search for Apple API documentation"""
         # Search the optimized index
         conn, cursor = self._search_index()
@@ -195,7 +192,7 @@ class DashExtractor:
         type_order = self._get_type_order_clause()
 
         # Get top-level types from configuration
-        if "types" in self._config and self._config["types"]:
+        if self._config.get("types"):
             # Sort types by their priority value and take the first few
             sorted_types = sorted(self._config["types"].items(), key=lambda x: x[1])
             top_types = [type_name for type_name, _ in sorted_types[:5]]
@@ -410,7 +407,7 @@ class DashExtractor:
 
                     # Add type and framework info
                     for line in lines[1:10]:
-                        if line.startswith("**Type:**") or line.startswith("**Framework:**"):
+                        if line.startswith(("**Type:**", "**Framework:**")):
                             summary_lines.append(f"   {line}")
 
                     # Add first line of summary if available
@@ -724,14 +721,13 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
         with full_path.open() as html_file:
             soup: bs4.Tag = bs4.BeautifulSoup(html_file)
 
-        if url.fragment:
-            if target := (
-                soup.find(id=url.fragment) or soup.find("a", attrs={"name": url.fragment})
-            ):
-                # The target is typically an anchor or a heading. Move up to its container element for relevant context.
-                # wtf pycharm. https://youtrack.jetbrains.com/issue/PY-88479
-                # noinspection PyUnboundLocalVariable
-                soup = target.parent or target
+        if url.fragment and (
+            target := (soup.find(id=url.fragment) or soup.find("a", attrs={"name": url.fragment}))
+        ):
+            # The target is typically an anchor or a heading. Move up to its container element for relevant context.
+            # wtf pycharm. https://youtrack.jetbrains.com/issue/PY-88479
+            # noinspection PyUnboundLocalVariable
+            soup = target.parent or target
 
         return soup.decode()
 
@@ -858,6 +854,7 @@ def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtracto
     search_paths = [Path(d).expanduser().absolute() for d in directories]
 
     docset_locations = chain.from_iterable(p.rglob("*.docset") for p in search_paths)
+    docset_locations = (p for p in docset_locations if p.is_dir())
 
     extractors = [DashExtractor(d) for d in docset_locations]
 
