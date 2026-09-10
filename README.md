@@ -5,9 +5,14 @@
 ZDocsetMCP is a Model Context Protocol (MCP) server that seamlessly integrates your local Dash docsets with AI
 assistants like Claude, enabling instant access to offline documentation without leaving your conversation.
 
+You probably don't need ZDocsetMCP on macOS, because [Dash](https://kapeli.com/dash) has [MCP support built in](https://blog.kapeli.com/dash-8).
+ZDocsetMCP works as a companion to [Zeal](https://zealdocs.org/) on Linux, where Dash is not available.
+
+Searching your local documentation is fast, unhindered by external rate limits, and most importantly:
+the results are always from the reference documentation, not unknown websites.
+
 ## 📋 Table of Contents
 
-- [Why DocsetMCP?](#why-docsetmcp)
 - [Quick Start](#quick-start)
 - [Features](#-features)
 - [Prerequisites](#prerequisites)
@@ -20,13 +25,6 @@ assistants like Claude, enabling instant access to offline documentation without
 - [Contributing](#contributing)
 - [License](#license)
 
-## Why DocsetMCP?
-
-- 📚 **Instant Documentation**: No switching, no web searches. Get straight to the docs directly in your AI conversation
-- 🔒 **Local and Private**: Work with docset files on your machine
-- ⚡ **Lightning Fast**: Optimized caching and direct database queries
-- 🎯 **Precise Results**: Get exactly what you need with smart filtering
-
 ## Quick Start
 
 ```json
@@ -34,19 +32,19 @@ assistants like Claude, enabling instant access to offline documentation without
   "mcpServers": {
     "docsetmcp": {
       "command": "uvx",
-      "args": ["docsetmcp"]
+      "args": ["--from", "git+https://github.com/keturn/ZDocsetMCP", "docsetmcp"]
     }
   }
 }
 ```
 
-Add to your MCP config and restart your MCP client. Then try asking something like "Find me the AppIntent documentation"
+Add to your MCP config and restart your MCP client. Then try asking something like "Find me the AppIntent documentation."
 
 ## ✨ Features
 
 ### Documentation Search
 
-- **Multi-Docset Support**: Search across 165+ supported docsets including Apple, NodeJS, Python, and more
+- **Multi-Docset Support**: Search across 165+ supported docsets including Apple, Node.js, Python, and more
 - **Language Filtering**: Target specific programming languages within docsets
 - **Name-Based Search**: Only returns entries where search terms match item names for precise results
 - **Smart Ranking**: Results ranked by match type (exact > prefix > substring) and dynamic type ordering
@@ -69,57 +67,14 @@ Add to your MCP config and restart your MCP client. Then try asking something li
 
 ## 📦 Supported Docsets
 
-DocsetMCP supports 165+ docsets including:
-
-<details>
-<summary><b>Popular Languages</b></summary>
-
-- Python (2 & 3)
-- JavaScript / TypeScript
-- Java
-- C / C++
-- Go
-- Rust
-- Ruby
-- Swift / Objective-C
-- PHP
-- Bash
-- And many more...
-
-</details>
-
-<details>
-<summary><b>Web Frameworks</b></summary>
-
-- React / Angular / Vue
-- Node.js / Express
-- Django / Flask
-- Ruby on Rails
-- Bootstrap
-- jQuery
-- And many more...
-
-</details>
-
-<details>
-<summary><b>Developer Tools</b></summary>
-
-- Git (cheatsheet)
-- Docker (cheatsheet)
-- Vim (cheatsheet)
-- MySQL / PostgreSQL
-- MongoDB / Redis
-- nginx / Apache
-- And many more...
-
-</details>
+ZDocsetMCP supports all the same docsets as [Zeal](https://zealdocs.org/).
 
 Use `list_available_docsets` to see all docsets installed on your system.
 
 ## Prerequisites
 
 - [Dash](https://kapeli.com/dash) with desired docsets downloaded
-- Python 3.10 or higher
+- Python 3.14 or higher
 - UV package manager ([How to Install](https://docs.astral.sh/uv/getting-started/installation/))
 - An AI assistant that supports MCP (Claude Desktop, Claude Code CLI, Cursor IDE, etc.)
 
@@ -194,7 +149,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "docsetmcp": {
       "command": "uvx",
-      "args": ["docsetmcp"]
+      "args": ["--from", "git+https://github.com/keturn/ZDocsetMCP", "docsetmcp"]
     }
   }
 }
@@ -207,7 +162,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "docsetmcp": {
       "command": "uvx",
-      "args": ["docsetmcp"],
+      "args": ["--from", "git+https://github.com/keturn/ZDocsetMCP", "docsetmcp"],
       "env": {
         "DOCSET_PATH": "/path/to/your/docsets",
         "CHEATSHEET_PATH": "/path/to/your/cheatsheets"
@@ -224,10 +179,10 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```bash
 # For current project
-claude mcp add docsetmcp "uvx docsetmcp"
+claude mcp add zdocsetmcp "uvx --from git+https://github.com/keturn/ZDocsetMCP docsetmcp"
 
 # For all projects
-claude mcp add --scope user docsetmcp "uvx docsetmcp"
+claude mcp add --scope user zdocsetmcp "uvx --from git+https://github.com/keturn/ZDocsetMCP docsetmcp"
 ```
 
 </details>
@@ -242,7 +197,7 @@ Add to your MCP configuration (Cursor: `.mcp/mcp.json` in your project root:
   "mcpServers": {
     "docsetmcp": {
       "command": "uvx",
-      "args": ["docsetmcp"]
+      "args": ["--from", "git+https://github.com/keturn/ZDocsetMCP", "docsetmcp"]
     }
   }
 }
@@ -263,39 +218,10 @@ If your MCP client supports `uvx`, no installation is needed! The package will b
 If you prefer to install locally or your MCP client doesn't support `uvx`:
 
 ```bash
-uv tool install docsetmcp
+uv tool install git+https://github.com/keturn/ZDocsetMCP
 ```
 
 Then use `docsetmcp` instead of `uvx docsetmcp` in your configuration.
-
-### Development Installation
-
-1. **Clone and install**:
-
-   ```bash
-   git clone https://github.com/codybrom/docsetmcp.git
-   cd docsetmcp
-   uv sync --all-extras
-   ```
-
-2. **Run tests** (optional):
-
-   ```bash
-   # Run basic tests
-   pytest tests/test_docsets.py::TestDocsets::test_yaml_structure -v
-
-   # Run quick tests (structure + existence checks)
-   pytest tests/ -k "yaml_structure or test_docset_exists" -v
-
-   # Run full test suite (all docsets)
-   pytest tests/ -v
-
-   # Run with coverage
-   pytest tests/ --cov=docsetmcp --cov-report=html -v
-
-   # Validate all local cheatsheets work (integration test)
-   python scripts/validate_cheatsheets.py
-   ```
 
 ## Usage Examples
 
@@ -497,24 +423,12 @@ Fetch entire cheatsheet content (recommended for comprehensive access).
 <details>
 <summary><b>❌ "Docset not found" error</b></summary>
 
-This means the docset isn't installed in Dash. To fix:
+This means the docset isn't installed in Zeal. To fix:
 
-1. Open Dash.app
-2. Go to Preferences → Downloads
+1. Open Zeal
+2. Go to File → Docset Library
 3. Download the required docset
 4. Restart your MCP client
-
-</details>
-
-<details>
-<summary><b>🔌 MCP connection failed</b></summary>
-
-1. **Check installation**: Run `pip show docsetmcp` to verify installation
-2. **Test manually**: Run `uvx docsetmcp` in terminal - you should see MCP output
-3. **Check logs**:
-    - Claude Desktop: Check Console.app for Claude logs
-    - Cursor: Check Output → MCP panel
-4. **Verify config path**: Ensure config file is in the correct location
 
 </details>
 
@@ -528,23 +442,13 @@ This means the docset isn't installed in Dash. To fix:
 
 </details>
 
-<details>
-<summary><b>🐛 Other issues</b></summary>
-
-1. **Python version**: Ensure you have Python 3.10 or higher
-2. **UV not found**: Install UV package manager from <https://docs.astral.sh/uv/>
-3. **Permission denied**: Check file permissions on Dash docsets directory
-4. **Report bugs**: Open an issue at <https://github.com/codybrom/docsetmcp/issues>
-
-</details>
-
 ## Development
 
 ### Building from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/codybrom/docsetmcp.git
+git clone https://github.com/keturn/ZDocsetMCP.git
 cd docsetmcp
 
 # Create venv and install project + dev dependencies
@@ -579,8 +483,8 @@ python scripts/validate_cheatsheets.py
 ### Code Quality
 
 ```bash
-# Format Python code with Black
-black docsetmcp/
+# Format Python code with ruff
+ruff docsetmcp/
 
 # Format YAML files with yamlfix
 yamlfix docsetmcp/docsets/*.yaml
@@ -649,30 +553,6 @@ uv build
 
 ## Contributing
 
-We welcome contributions! Here's how you can help:
-
-### Adding New Docset Support
-
-1. Create a YAML configuration in `docsetmcp/docsets/`:
-
-   ```yaml
-   # docsetmcp/docsets/my_docset.yaml
-   name: My Docset
-   description: Brief description of the docset
-   docset_path: My_Docset/My_Docset.docset
-   languages:
-     - python
-     - javascript
-   ```
-
-2. Test your configuration:
-
-   ```bash
-   pytest tests/test_docsets.py -k "my_docset" -v
-   ```
-
-3. Submit a pull request
-
 ### Reporting Issues
 
 - 🐛 [Bug Reports](https://github.com/keturn/ZDocsetMCP/issues/new?labels=bug)
@@ -702,7 +582,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Thanks to [Kapeli](https://kapeli.com/) for creating Dash
-- and to [Cody Brom](https://github.com/codybrom/) for the original macOS version of [DocsetMCP](https://github.com/codybrom/DocsetMCP).
-- Built on the [Model Context Protocol](https://modelcontextprotocol.io/) standard
-- Inspired by the MCP community and ecosystem
+ZDocsetMCP is derived from [DocsetMCP](https://github.com/codybrom/DocsetMCP) by [Cody Brom](https://github.com/codybrom/).
+
+Thanks to [Kapeli](https://kapeli.com/) for creating Dash,
+and to [Oleg Shparber](https://github.com/trollixx) and team for [Zeal](https://zealdocs.org/).
+
+Built on the [Model Context Protocol](https://modelcontextprotocol.io/) standard.
