@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from email.utils import formatdate
 from mimetypes import guess_type
 
 from markupsafe import Markup
@@ -60,7 +61,11 @@ async def doc_entry(request: Request) -> Response:
         if content is None:
             return Response(status_code=404)
         else:
-            return Response(content=content, media_type=guess_type(path)[0])
+            return Response(
+                content=content[0],
+                media_type=guess_type(path)[0],
+                headers={"Last-Modified": formatdate(content[1], usegmt=True)},
+            )
 
 
 def html_doc(body: Markup, title: str) -> str:

@@ -1,12 +1,16 @@
 import base64
 import hashlib
+import io
 import json
 import logging
+import mmap
 import os
 import plistlib
 import re
 import sqlite3
 import tarfile
+from compression import zlib
+from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 from plistlib import InvalidFileException
@@ -749,7 +753,7 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
             return self.html_cache[clean_path]
 
         try:
-            raw_file = self._extract_raw_from_tarix(search_path)
+            raw_file = self._extract_raw_from_tarix(search_path)[0]
             if raw_file is not None:
                 content = raw_file.decode("utf-8", errors="ignore")
                 self.html_cache[clean_path] = content
@@ -760,7 +764,7 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
 
         return None
 
-    def _extract_raw_from_tarix(self, search_path: str) -> bytes | None:
+    def _extract_raw_from_tarix(self, search_path: str) -> tuple[bytes, int] | None:
         # Remove anchor from path
         clean_path = search_path.split("#")[0]
 
@@ -777,28 +781,33 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
         docset_folder = self._config["docset_path"].split("/")[-1]
         full_path = f"{docset_folder}/Contents/Resources/Documents/{clean_path}"
 
-        # TODO: optimize with tarixIndex.db
-        # Query tarix index for file location
-        # conn = connect_readonly(self.tarix_index)
-        # cursor = conn.cursor()
-        #
-        # cursor.execute("SELECT hash FROM tarindex WHERE path = ?", (full_path,))
-        # result = cursor.fetchone()
-        # conn.close()
-        #
-        # if not result:
-        #     return None
-        #
-        # # Validate hash format: "entry_number offset size"
-        # hash_parts = result[0].split()
-        # if len(hash_parts) != 3:
-        #     return None
+        if self.tarix_index.exists():
+            record = self._get_tarix_index(full_path)
+            if record:
+                return self._tarix_extract_by_index(record.offset, record.size)
+
+        return self._tarix_extract_as_tar(full_path, clean_path)
+
+    def _tarix_extract_by_index(self, offset: int, size: int) -> tuple[bytes, int]:
+        TAR_BLOCK_SIZE = 512
+        with open(self.tarix_archive, "rb") as compressed_file:
+            mm = mmap.mmap(
+                compressed_file.fileno(),
+                0,
+                access=mmap.ACCESS_READ,
+            )[offset : offset + size * TAR_BLOCK_SIZE]
+            decompressor = zlib.decompressobj(wbits=-zlib.MAX_WBITS)  # cspell:ignore wbits
+            decompressed_blocks = decompressor.decompress(mm)
+            with tarfile.open(mode="r:", fileobj=io.BytesIO(decompressed_blocks)) as tar:
+                member = tar.next()
+                return tar.extractfile(member).read(), member.mtime
+
+    def _tarix_extract_as_tar(self, full_path: str, clean_path: str) -> tuple[bytes, int] | None:
         with tarfile.open(self.tarix_archive, "r:gz") as tar:
-            # Find the file by path name (entry_number doesn't seem to be sequential index)
             try:
                 target_member = tar.getmember(full_path)
                 if (reader := tar.extractfile(target_member)) is not None:
-                    return reader.read()
+                    return reader.read(), target_member.mtime
             except KeyError:
                 # If exact path fails, try to find by name
                 target_file = full_path.split("/")[-1]  # Get just the filename
@@ -806,9 +815,21 @@ Try opening Dash and ensuring the '{self._config["name"]}' docset is fully downl
                     if (
                         member.name.endswith(target_file)
                         and clean_path in member.name
-                        and (reader := tar.extractfile(target_member)) is not None
+                        and (reader := tar.extractfile(member)) is not None
                     ):
-                        return reader.read()
+                        return reader.read(), member.mtime
+
+    def _get_tarix_index(self, search_path: str) -> TarixRecord:
+        conn = connect_readonly(self.tarix_index)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT hash FROM tarindex WHERE path = ?", (search_path,))
+        result = cursor.fetchone()
+        conn.close()
+
+        if not result:
+            return None
+        return TarixRecord.from_string(result[0])
 
     def _format_html_as_markdown(
         self, html_content: str, name: str, doc_type: str, path: str
@@ -873,3 +894,17 @@ def initialize_docsets(server_config: DocsetMCPConfig) -> dict[str, DashExtracto
     extractors = [DashExtractor(d) for d in docset_locations]
 
     return {e.id: e for e in extractors}
+
+
+@dataclass
+class TarixRecord:
+    entry_number: int
+    offset: int
+    size: int
+
+    @classmethod
+    def from_string(cls, s: str) -> TarixRecord:
+        parts = s.split()
+        if len(parts) != 3:
+            raise ValueError(f"Expected three parts in {parts:r}")
+        return cls(*[int(x) for x in parts])
